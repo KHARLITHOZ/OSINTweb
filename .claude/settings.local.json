@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(which python3:*)",
+      "Bash(pip3 install:*)",
+      "Bash(psql -U postgres -c \"\\\\l\" 2>&1)",
+      "Bash(psql -h 127.0.0.1 -U postgres -c \"CREATE USER osint_user WITH PASSWORD 'osint_secure_2024';\" 2>&1)"
+    ]
+  }
+}

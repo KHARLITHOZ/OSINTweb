@@ -1,0 +1,135 @@
+{% extends "myapp/base.html" %}
+{% block title %}Búsqueda IP — OSINTng{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  #map { height: 260px; border-radius: 6px; border: 1px solid #1e3a5f; }
+  .risk-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 4px; font-size: 0.9em; font-weight: bold;
+  }
+  .risk-ok   { background: #002a10; border: 1px solid #00ff88; color: #00ff88; }
+  .risk-warn { background: #2a1a00; border: 1px solid #ff8800; color: #ffaa44; }
+  .risk-bad  { background: #2a0000; border: 1px solid #ff3333; color: #ff6666; }
+  .data-row { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid #1e3a5f; }
+  .data-row:last-child { border-bottom: none; }
+  .data-label { color: #88aaff; min-width: 130px; font-size: 0.85em; flex-shrink: 0; }
+  .data-value { color: #c8ffbe; word-break: break-all; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>&#x1F50D; Búsqueda de IP</h1>
+
+<!-- Formulario de búsqueda -->
+<div class="card">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="ip">Introduce tu dirección IP</label>
+      <input type="text" id="ip" name="ip" value="{{ query }}"
+             placeholder="Ej: 8.8.8.8" autocomplete="off" autofocus>
+    </div>
+    <button type="submit">Analizar</button>
+  </form>
+</div>
+
+<!-- Error -->
+{% if error %}
+<div class="alert alert-danger">&#x26A0; {{ error }}</div>
+{% endif %}
+
+<!-- Resultados -->
+{% if result %}
+
+<!-- Cabecera con IP y ubicación -->
+<div class="card">
+  <h2>{{ result.ip }}
+    {% if result.country_code %}
+      &nbsp;<span class="tag">{{ result.country_code }}</span>
+    {% endif %}
+  </h2>
+  <p style="color:#88aaff; margin-bottom:16px;">
+    {{ result.city }}{% if result.city and result.region %}, {% endif %}{{ result.region }}{% if result.country %} — {{ result.country }}{% endif %}
+  </p>
+
+  <!-- Indicadores de riesgo -->
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;">
+    {% if result.is_proxy %}
+      <span class="risk-badge risk-bad">&#x26D4; Proxy / VPN detectado</span>
+    {% else %}
+      <span class="risk-badge risk-ok">&#x2714; Sin Proxy / VPN</span>
+    {% endif %}
+
+    {% if result.is_hosting %}
+      <span class="risk-badge risk-warn">&#x1F3E0; Hosting / Datacenter</span>
+    {% else %}
+      <span class="risk-badge risk-ok">&#x2714; No es Hosting</span>
+    {% endif %}
+  </div>
+
+  <!-- Mapa -->
+  {% if result.latitude and result.longitude %}
+  <div id="map"></div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var lat = {{ result.latitude }};
+      var lon = {{ result.longitude }};
+      var map = L.map("map", { zoomControl: true }).setView([lat, lon], 8);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(map);
+      L.circleMarker([lat, lon], {
+        radius: 10, color: "#00ff88", fillColor: "#00ff88", fillOpacity: 0.5, weight: 2
+      }).addTo(map).bindPopup("<b>{{ result.ip }}</b><br>{{ result.city }}, {{ result.country }}").openPopup();
+    });
+  </script>
+  {% endif %}
+</div>
+
+<!-- Datos de red y geolocalización -->
+<div class="grid-2">
+
+  <div class="card">
+    <h2>Geolocalización</h2>
+    <div class="data-row"><span class="data-label">País</span><span class="data-value">{{ result.country }} ({{ result.country_code }})</span></div>
+    <div class="data-row"><span class="data-label">Región</span><span class="data-value">{{ result.region|default:"—" }}</span></div>
+    <div class="data-row"><span class="data-label">Ciudad</span><span class="data-value">{{ result.city|default:"—" }}</span></div>
+    <div class="data-row"><span class="data-label">Latitud</span><span class="data-value">{{ result.latitude|default:"—" }}</span></div>
+    <div class="data-row"><span class="data-label">Longitud</span><span class="data-value">{{ result.longitude|default:"—" }}</span></div>
+    <div class="data-row"><span class="data-label">Zona horaria</span><span class="data-value">{{ result.timezone|default:"—" }}</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Red</h2>
+    <div class="data-row"><span class="data-label">ISP</span><span class="data-value">{{ result.isp|default:"—" }}</span></div>
+    <div class="data-row"><span class="data-label">Organización</span><span class="data-value">{{ result.org|default:"—" }}</span></div>
+    <div class="data-row"><span class="data-label">ASN</span><span class="data-value">{{ result.asn|default:"—" }}</span></div>
+    <div class="data-row"><span class="data-label">Proxy / VPN</span>
+      <span class="data-value">
+        {% if result.is_proxy %}<span class="tag tag-red">Sí</span>{% else %}<span class="tag">No</span>{% endif %}
+      </span>
+    </div>
+    <div class="data-row"><span class="data-label">Hosting</span>
+      <span class="data-value">
+        {% if result.is_hosting %}<span class="tag tag-red">Sí</span>{% else %}<span class="tag">No</span>{% endif %}
+      </span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Búsquedas recientes de la misma IP -->
+{% with result.record as rec %}
+<div class="card">
+  <h2>Consulta guardada</h2>
+  <div class="data-row"><span class="data-label">ID registro</span><span class="data-value">#{{ rec.id }}</span></div>
+  <div class="data-row"><span class="data-label">Fecha</span><span class="data-value">{{ rec.created_at|date:"d/m/Y H:i:s" }}</span></div>
+  <div class="data-row"><span class="data-label">Éxito</span><span class="data-value"><span class="tag">&#x2714; Sí</span></span></div>
+</div>
+{% endwith %}
+
+{% endif %}
+{% endblock %}

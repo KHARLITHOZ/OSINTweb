@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}OSINTng{% endblock %}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0f1e; color: #c8ffbe; font-family: 'Courier New', monospace; min-height: 100vh; }
+    nav {
+      background: #000000;
+      border-bottom: 1px solid #00b661;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    nav .brand { font-size: 1.3em; font-weight: bold; color: #03d372; letter-spacing: 2px; }
+    nav a { color: #88aaff; text-decoration: none; padding: 6px 12px; border-radius: 4px; transition: background 0.2s; }
+    nav a:hover { background: #1a2540; color: #00ff88; }
+    .container { max-width: 960px; margin: 40px auto; padding: 0 20px; }
+    .card { background: #0d1526; border: 1px solid #1e3a5f; border-radius: 8px; padding: 28px; margin-bottom: 24px; }
+    h1, h2, h3 { color: #00ff88; margin-bottom: 16px; }
+    h1 { font-size: 1.6em; letter-spacing: 1px; }
+    h2 { font-size: 1.2em; }
+    h3 { font-size: 1em; color: #88aaff; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; color: #88aaff; margin-bottom: 6px; font-size: 0.9em; }
+    input[type="text"] {
+      width: 100%; background: #060c1a; border: 1px solid #1e3a5f;
+      border-radius: 4px; color: #c8ffbe; padding: 10px 14px;
+      font-family: inherit; font-size: 1em; outline: none; transition: border-color 0.2s;
+    }
+    input:focus { border-color: #00ff88; }
+    button {
+      background: #00ff88; color: #0a0f1e; border: none; padding: 10px 24px;
+      border-radius: 4px; font-family: inherit; font-weight: bold;
+      font-size: 1em; cursor: pointer; transition: background 0.2s;
+    }
+    button:hover { background: #00cc66; }
+    .btn-sec {
+      background: transparent; border: 1px solid #88aaff; color: #88aaff;
+      padding: 8px 18px; border-radius: 4px; font-family: inherit;
+      cursor: pointer; font-size: 0.9em; transition: all 0.2s;
+    }
+    .btn-sec:hover { background: #88aaff; color: #0a0f1e; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #1e3a5f; }
+    th { color: #88aaff; font-size: 0.85em; text-transform: uppercase; }
+    td { color: #c8ffbe; word-break: break-word; }
+    .tag {
+      display: inline-block; background: #1a2540; border: 1px solid #00ff88;
+      border-radius: 3px; padding: 2px 8px; font-size: 0.8em; margin: 2px; color: #00ff88;
+    }
+    .tag-red { border-color: #ff3333; color: #ff6666; background: #2a0000; }
+    .alert { padding: 12px 16px; border-radius: 4px; margin-bottom: 16px; }
+    .alert-warn  { background: #2a1a00; border: 1px solid #ff8800; color: #ffaa44; }
+    .alert-danger{ background: #2a0000; border: 1px solid #ff3333; color: #ff6666; }
+    .alert-ok    { background: #002a10; border: 1px solid #00ff88; color: #00ff88; }
+    .alert-info  { background: #001a2a; border: 1px solid #88aaff; color: #88aaff; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 640px) { .grid-3, .grid-2 { grid-template-columns: 1fr; } }
+    .stat-card {
+      background: #060c1a; border: 1px solid #1e3a5f; border-radius: 6px;
+      padding: 20px; text-align: center;
+    }
+    .stat-card .num { font-size: 2em; color: #00ff88; font-weight: bold; }
+    .stat-card .lbl { font-size: 0.85em; color: #88aaff; margin-top: 4px; }
+    pre { background: #060c1a; padding: 14px; border-radius: 4px; overflow-x: auto; font-size: 0.85em; color: #c8ffbe; border: 1px solid #1e3a5f; white-space: pre-wrap; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <nav>
+    <span class="brand">&#91; OSINT &#93;</span>
+    <a href="/">Inicio</a>
+    <a href="/buscar/ip/">IP</a>
+    <a href="/buscar/dominio/">Dominio</a>
+    <a href="/buscar/email/">Email</a>
+    <a href="/grafo/">Grafo</a>
+    <a href="/historial/">Historial</a>
+  </nav>
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>
