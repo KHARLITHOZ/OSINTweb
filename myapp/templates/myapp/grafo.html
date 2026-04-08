@@ -100,11 +100,12 @@
 {% block content %}
 <h1>&#x1F578; Grafo de Relaciones</h1>
 
+{{ graph|json_script:"_graph-data" }}
 <script>
-  const GRAPH_DATA = {{ graph_json|safe }};
+  const GRAPH_DATA = JSON.parse(document.getElementById('_graph-data').textContent);
 </script>
 
-{% if graph_json != '{"nodes": [], "links": []}' %}
+{% if has_graph %}
 
 <div class="card" style="padding:0; overflow:visible; border:none; background:transparent;">
 

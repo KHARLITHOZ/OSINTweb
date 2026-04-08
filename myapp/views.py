@@ -133,8 +133,24 @@ def buscar_ip(request):
                     success=False,
                 )
 
+    ip_data = {
+        "ip": result.ip,
+        "country": result.country or "",
+        "country_code": result.country_code or "",
+        "region": result.region or "",
+        "city": result.city or "",
+        "latitude": result.latitude,
+        "longitude": result.longitude,
+        "isp": result.isp or "",
+        "org": result.org or "",
+        "asn": result.asn or "",
+        "timezone": result.timezone or "",
+        "is_proxy": result.is_proxy,
+        "is_hosting": result.is_hosting,
+    } if result else None
     return render(request, "myapp/ip.html", {
         "result": result,
+        "ip_data": ip_data,
         "error": error,
         "query": query,
     })
@@ -231,9 +247,11 @@ def buscar_email(request):
                 # lookup retornó None sin excepción — no debería ocurrir
                 error = "No se pudo obtener información del email."
 
+    email_data = {"email": result.email, **analysis} if result and analysis else None
     return render(request, "myapp/email.html", {
         "result": result,
         "analysis": analysis,
+        "email_data": email_data,
         "error": error,
         "query": query,
     })
@@ -325,7 +343,10 @@ def grafo(request):
         "links": links,
     }
 
-    return render(request, 'myapp/grafo.html', {"graph_json": json.dumps(graph)})
+    return render(request, 'myapp/grafo.html', {
+        "graph": graph,
+        "has_graph": bool(nodes),
+    })
 
 
 @login_required
@@ -375,9 +396,25 @@ def comparar_dominios(request):
             error2 = str(exc)
             SearchRecord.objects.create(user=request.user, query=q2, query_type="domain", success=False)
 
+    def _domain_dict(r):
+        if not r:
+            return None
+        return {
+            "domain": r.domain,
+            "registrar": r.registrar or "",
+            "creation_date": r.creation_date or "",
+            "expiration_date": r.expiration_date or "",
+            "dns_a": r.dns_a_list,
+            "dns_ns": r.dns_ns_list,
+            "dns_mx": r.dns_mx_list,
+            "dns_txt": r.dns_txt_list,
+        }
+
     return render(request, "myapp/comparar.html", {
         "result1": result1, "error1": error1, "q1": q1,
         "result2": result2, "error2": error2, "q2": q2,
+        "data1": _domain_dict(result1),
+        "data2": _domain_dict(result2),
     })
 
 

@@ -67,25 +67,25 @@
       <div class="data-row"><span class="data-label">Expiración</span><span class="data-value">{{ result1.expiration_date|default:"—" }}</span></div>
 
       <p class="sec-title">A — IPv4</p>
-      {% with result1.get_list "dns_a" as lst %}
+      {% with result1.dns_a_list as lst %}
         {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
         {% else %}<span class="dns-empty">Sin registros A.</span>{% endif %}
       {% endwith %}
 
       <p class="sec-title">NS — Name Servers</p>
-      {% with result1.get_list "dns_ns" as lst %}
+      {% with result1.dns_ns_list as lst %}
         {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
         {% else %}<span class="dns-empty">Sin NS.</span>{% endif %}
       {% endwith %}
 
       <p class="sec-title">MX — Mail</p>
-      {% with result1.get_list "dns_mx" as lst %}
+      {% with result1.dns_mx_list as lst %}
         {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
         {% else %}<span class="dns-empty">Sin MX.</span>{% endif %}
       {% endwith %}
 
       <p class="sec-title">TXT</p>
-      {% with result1.get_list "dns_txt" as lst %}
+      {% with result1.dns_txt_list as lst %}
         {% if lst %}{% for r in lst %}<pre style="margin-bottom:4px;font-size:.78em;">{{ r }}</pre>{% endfor %}
         {% else %}<span class="dns-empty">Sin TXT.</span>{% endif %}
       {% endwith %}
@@ -108,25 +108,25 @@
       <div class="data-row"><span class="data-label">Expiración</span><span class="data-value">{{ result2.expiration_date|default:"—" }}</span></div>
 
       <p class="sec-title">A — IPv4</p>
-      {% with result2.get_list "dns_a" as lst %}
+      {% with result2.dns_a_list as lst %}
         {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
         {% else %}<span class="dns-empty">Sin registros A.</span>{% endif %}
       {% endwith %}
 
       <p class="sec-title">NS — Name Servers</p>
-      {% with result2.get_list "dns_ns" as lst %}
+      {% with result2.dns_ns_list as lst %}
         {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
         {% else %}<span class="dns-empty">Sin NS.</span>{% endif %}
       {% endwith %}
 
       <p class="sec-title">MX — Mail</p>
-      {% with result2.get_list "dns_mx" as lst %}
+      {% with result2.dns_mx_list as lst %}
         {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
         {% else %}<span class="dns-empty">Sin MX.</span>{% endif %}
       {% endwith %}
 
       <p class="sec-title">TXT</p>
-      {% with result2.get_list "dns_txt" as lst %}
+      {% with result2.dns_txt_list as lst %}
         {% if lst %}{% for r in lst %}<pre style="margin-bottom:4px;font-size:.78em;">{{ r }}</pre>{% endfor %}
         {% else %}<span class="dns-empty">Sin TXT.</span>{% endif %}
       {% endwith %}
@@ -139,16 +139,20 @@
 
 </div><!-- /col-grid -->
 
+{% if data1 %}{{ data1|json_script:"_cmp-data1" }}{% endif %}
+{% if data2 %}{{ data2|json_script:"_cmp-data2" }}{% endif %}
+{{ q1|json_script:"_cmp-q1" }}
+{{ q2|json_script:"_cmp-q2" }}
 <script>
+const _cmpData1 = {% if data1 %}JSON.parse(document.getElementById('_cmp-data1').textContent){% else %}null{% endif %};
+const _cmpData2 = {% if data2 %}JSON.parse(document.getElementById('_cmp-data2').textContent){% else %}null{% endif %};
+const _cmpQ1 = JSON.parse(document.getElementById('_cmp-q1').textContent);
+const _cmpQ2 = JSON.parse(document.getElementById('_cmp-q2').textContent);
 function doExportCmp() {
-  const data = {
-    domainA: {{ result1|default:"null"|safe }},
-    domainB: {{ result2|default:"null"|safe }},
-  };
-  exportJSON({ a: "{{ q1 }}", b: "{{ q2 }}" }, "comparacion_{{ q1 }}_vs_{{ q2 }}.json");
+  exportJSON({ a: _cmpData1, b: _cmpData2 }, "comparacion_" + _cmpQ1 + "_vs_" + _cmpQ2 + ".json");
 }
-{% if result1 %}window.osintAddRecent && osintAddRecent("domain", "{{ result1.domain }}");{% endif %}
-{% if result2 %}window.osintAddRecent && osintAddRecent("domain", "{{ result2.domain }}");{% endif %}
+{% if result1 %}window.osintAddRecent && osintAddRecent("domain", _cmpData1.domain);{% endif %}
+{% if result2 %}window.osintAddRecent && osintAddRecent("domain", _cmpData2.domain);{% endif %}
 </script>
 
 {% elif q1 or q2 %}

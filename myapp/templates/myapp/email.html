@@ -227,19 +227,12 @@
 </div>
 {% endwith %}
 
+{{ email_data|json_script:"_email-data" }}
 <script>
-const _emailData = {
-  email: "{{ result.email }}",
-  domain: "{{ analysis.domain }}",
-  mx_valid: {{ analysis.mx_valid|yesno:"true,false" }},
-  is_disposable: {{ analysis.is_disposable|yesno:"true,false" }},
-  risk_level: "{{ analysis.risk_level }}",
-  risk_flags: {{ analysis.risk_flags|default:"[]"|safe }},
-  mx_records: {{ analysis.mx_records|default:"[]"|safe }},
-};
-function doExportEmail() { exportJSON(_emailData, "email_{{ result.email }}.json"); }
+const _emailData = JSON.parse(document.getElementById('_email-data').textContent);
+function doExportEmail() { exportJSON(_emailData, "email_" + _emailData.email + ".json"); }
 function doAIEmail() { analyzeWithAI("email", _emailData, document.getElementById("aiBtnEmail"), document.getElementById("aiResultEmail")); }
-window.osintAddRecent && osintAddRecent("email", "{{ result.email }}");
+window.osintAddRecent && osintAddRecent("email", _emailData.email);
 </script>
 {% endif %}
 {% endblock %}

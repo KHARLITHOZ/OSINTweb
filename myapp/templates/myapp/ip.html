@@ -149,20 +149,12 @@
 </div>
 {% endwith %}
 
+{{ ip_data|json_script:"_ip-data" }}
 <script>
-const _ipData = {
-  ip: "{{ result.ip }}",
-  country: "{{ result.country }}", country_code: "{{ result.country_code }}",
-  region: "{{ result.region }}", city: "{{ result.city }}",
-  latitude: {{ result.latitude|default:"null" }}, longitude: {{ result.longitude|default:"null" }},
-  isp: "{{ result.isp }}", org: "{{ result.org }}", asn: "{{ result.asn }}",
-  timezone: "{{ result.timezone }}",
-  is_proxy: {{ result.is_proxy|yesno:"true,false" }},
-  is_hosting: {{ result.is_hosting|yesno:"true,false" }},
-};
-function doExportIP() { exportJSON(_ipData, "ip_{{ result.ip }}.json"); }
+const _ipData = JSON.parse(document.getElementById('_ip-data').textContent);
+function doExportIP() { exportJSON(_ipData, "ip_" + _ipData.ip + ".json"); }
 function doAIIP() { analyzeWithAI("ip", _ipData, document.getElementById("aiBtnIP"), document.getElementById("aiResultIP")); }
-window.osintAddRecent && osintAddRecent("ip", "{{ result.ip }}");
+window.osintAddRecent && osintAddRecent("ip", _ipData.ip);
 </script>
 {% endif %}
 {% endblock %}
