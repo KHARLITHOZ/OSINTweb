@@ -1,0 +1,245 @@
+{% extends "myapp/base.html" %}
+{% block title %}Análisis de Email — OSINTng{% endblock %}
+
+{% block extra_head %}
+<style>
+  .data-row { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid #1e3a5f; }
+  .data-row:last-child { border-bottom: none; }
+  .data-label { color: #88aaff; min-width: 170px; font-size: 0.85em; flex-shrink: 0; }
+  .data-value { color: #c8ffbe; word-break: break-all; }
+  .risk-bar { height: 8px; border-radius: 4px; margin-top: 6px; }
+  .risk-bajo  { background: #00ff88; }
+  .risk-medio { background: #ff8800; }
+  .risk-alto  { background: #ff3333; }
+  .risk-label-bajo  { color: #00ff88; }
+  .risk-label-medio { color: #ff8800; }
+  .risk-label-alto  { color: #ff3333; }
+  .flag-item {
+    background: #2a0000; border: 1px solid #ff3333; color: #ff6666;
+    border-radius: 4px; padding: 6px 12px; margin-bottom: 6px; font-size: 0.88em;
+  }
+  .mx-item {
+    background: #060c1a; border: 1px solid #1e3a5f; border-radius: 4px;
+    padding: 6px 10px; margin-bottom: 6px; font-size: 0.88em;
+  }
+  .check-ok  { color: #00ff88; }
+  .check-no  { color: #ff3333; }
+  .check-warn { color: #ff8800; }
+  .section-title { color: #00ff88; font-size: 0.8em; text-transform: uppercase;
+                   letter-spacing: 1px; margin-bottom: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>&#x2709; Análisis de Email</h1>
+
+<!-- Formulario -->
+<div class="card">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="email">Introduce un correo electrónico</label>
+      <input type="text" id="email" name="email" value="{{ query }}"
+             placeholder="Ej: usuario@ejemplo.com" autocomplete="off" autofocus>
+    </div>
+    <button type="submit">Analizar</button>
+  </form>
+</div>
+
+<!-- Error -->
+{% if error %}
+<div class="alert alert-danger">&#x26A0; {{ error }}</div>
+{% endif %}
+
+{% if result and analysis %}
+
+<!-- Export + AI -->
+<div class="export-bar">
+  <button class="btn-export" onclick="doExportEmail()">&#x2B07; Exportar JSON</button>
+  <button class="btn-export" onclick="window.print()">&#x1F5A8; Exportar PDF</button>
+  <button class="ai-btn" id="aiBtnEmail" onclick="doAIEmail()">&#x1F916; Analizar con IA</button>
+</div>
+<div id="aiResultEmail"></div>
+
+<!-- Cabecera -->
+<div class="card">
+  <h2>{{ result.email }}</h2>
+  <div class="grid-3" style="margin-top:12px;">
+    <div class="stat-card">
+      <div class="num risk-label-{{ analysis.risk_level }}">
+        {{ analysis.risk_level|upper }}
+      </div>
+      <div class="lbl">Nivel de Riesgo</div>
+    </div>
+    <div class="stat-card">
+      {% if analysis.mx_valid %}
+        <div class="num check-ok">&#x2714;</div>
+        <div class="lbl">MX Válido</div>
+      {% else %}
+        <div class="num check-no">&#x2716;</div>
+        <div class="lbl">Sin MX</div>
+      {% endif %}
+    </div>
+    <div class="stat-card">
+      {% if analysis.is_disposable %}
+        <div class="num check-warn">&#x26A0;</div>
+        <div class="lbl">Desechable</div>
+      {% else %}
+        <div class="num check-ok">&#x2714;</div>
+        <div class="lbl">No Desechable</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="risk-bar risk-{{ analysis.risk_level }}" style="margin-top:16px;
+    width: {% if analysis.risk_level == 'bajo' %}30{% elif analysis.risk_level == 'medio' %}65{% else %}100{% endif %}%;">
+  </div>
+</div>
+
+<!-- Flags de riesgo -->
+{% if analysis.risk_flags %}
+<div class="card">
+  <h2>&#x26A0; Indicadores de Riesgo</h2>
+  {% for flag in analysis.risk_flags %}
+    <div class="flag-item">&#x2022; {{ flag }}</div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-ok">&#x2714; No se detectaron indicadores de riesgo.</div>
+{% endif %}
+
+<div class="grid-2">
+
+  <!-- Información del email -->
+  <div class="card">
+    <h2>Información del Email</h2>
+    <div class="data-row">
+      <span class="data-label">Email</span>
+      <span class="data-value">{{ analysis.email }}</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">Usuario</span>
+      <span class="data-value">{{ analysis.username }}</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">Dominio</span>
+      <span class="data-value">{{ analysis.domain }}</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">Dominio existe</span>
+      <span class="data-value">
+        {% if analysis.domain_exists %}
+          <span class="tag">&#x2714; Sí</span>
+        {% else %}
+          <span class="tag tag-red">&#x2716; No</span>
+        {% endif %}
+      </span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">Email desechable</span>
+      <span class="data-value">
+        {% if analysis.is_disposable %}
+          <span class="tag tag-red">&#x26A0; Sí</span>
+        {% else %}
+          <span class="tag">&#x2714; No</span>
+        {% endif %}
+      </span>
+    </div>
+  </div>
+
+  <!-- Análisis del username -->
+  <div class="card">
+    <h2>Análisis del Username</h2>
+    <div class="data-row">
+      <span class="data-label">Longitud</span>
+      <span class="data-value">{{ analysis.username_analysis.length }} caracteres</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">Ratio números</span>
+      <span class="data-value">{{ analysis.username_analysis.digit_ratio }}</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">Patrones</span>
+      <span class="data-value">
+        {% if analysis.username_analysis.flags %}
+          {% for f in analysis.username_analysis.flags %}
+            <span class="tag tag-red">{{ f }}</span>
+          {% endfor %}
+        {% else %}
+          <span class="tag">Sin patrones sospechosos</span>
+        {% endif %}
+      </span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Registros MX -->
+<div class="card">
+  <h2>Registros MX (Servidores de Correo)</h2>
+  {% if analysis.mx_records %}
+    <p class="section-title" style="margin-bottom:12px;">
+      &#x2714; El dominio acepta correo electrónico
+    </p>
+    {% for mx in analysis.mx_records %}
+      <div class="mx-item">{{ mx }}</div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-warn">&#x26A0; No se encontraron registros MX. El dominio no parece aceptar correo.</div>
+  {% endif %}
+</div>
+
+<!-- Brechas HIBP -->
+{% if analysis.hibp_checked %}
+  {% if analysis.hibp_breaches %}
+  <div class="card">
+    <h2>&#x1F525; Brechas de Datos (HIBP) — {{ analysis.breach_count }} filtración{{ analysis.breach_count|pluralize:"es" }}</h2>
+    {% for b in analysis.hibp_breaches %}
+    <div style="background:#1a0000; border:1px solid #ff3333; border-radius:5px; padding:12px; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+        <span style="color:#ff6666; font-weight:bold;">{{ b.name }}</span>
+        <span style="color:#445; font-size:.85em;">{{ b.breach_date }}</span>
+      </div>
+      {% if b.domain %}<div style="color:#88aaff; font-size:.85em; margin-bottom:6px;">{{ b.domain }}</div>{% endif %}
+      <div style="color:#888; font-size:.8em;">
+        Afectados: {{ b.pwn_count|default:"—" }}
+        &nbsp;|&nbsp;
+        Datos: {% for dc in b.data_classes %}<span class="tag tag-red" style="font-size:.75em;">{{ dc }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-ok">&#x2714; No encontrado en ninguna brecha de datos conocida (HIBP).</div>
+  {% endif %}
+{% else %}
+<div class="alert alert-info">
+  &#x2139; Configura <code>HIBP_API_KEY</code> en tu <code>.env</code> para verificar brechas reales via Have I Been Pwned.
+</div>
+{% endif %}
+
+<!-- Consulta guardada -->
+{% with result.record as rec %}
+<div class="card">
+  <h2>Consulta guardada</h2>
+  <div class="data-row"><span class="data-label">ID registro</span><span class="data-value">#{{ rec.id }}</span></div>
+  <div class="data-row"><span class="data-label">Fecha</span><span class="data-value">{{ rec.created_at|date:"d/m/Y H:i:s" }}</span></div>
+  <div class="data-row"><span class="data-label">Éxito</span><span class="data-value"><span class="tag">&#x2714; Sí</span></span></div>
+</div>
+{% endwith %}
+
+<script>
+const _emailData = {
+  email: "{{ result.email }}",
+  domain: "{{ analysis.domain }}",
+  mx_valid: {{ analysis.mx_valid|yesno:"true,false" }},
+  is_disposable: {{ analysis.is_disposable|yesno:"true,false" }},
+  risk_level: "{{ analysis.risk_level }}",
+  risk_flags: {{ analysis.risk_flags|default:"[]"|safe }},
+  mx_records: {{ analysis.mx_records|default:"[]"|safe }},
+};
+function doExportEmail() { exportJSON(_emailData, "email_{{ result.email }}.json"); }
+function doAIEmail() { analyzeWithAI("email", _emailData, document.getElementById("aiBtnEmail"), document.getElementById("aiResultEmail")); }
+window.osintAddRecent && osintAddRecent("email", "{{ result.email }}");
+</script>
+{% endif %}
+{% endblock %}

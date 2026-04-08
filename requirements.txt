@@ -1,0 +1,5 @@
+gunicorn
+celery
+django-celery-beat
+redis
+psycopg2-binary

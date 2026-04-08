@@ -1,0 +1,493 @@
+{% extends "myapp/base.html" %}
+{% block title %}Grafo de Relaciones — OSINTng{% endblock %}
+
+{% block extra_head %}
+<style>
+  .graph-wrap {
+    position: relative;
+    background: #060c1a;
+    border: 1px solid #1e3a5f;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 620px;
+  }
+  #graph-svg { width: 100%; height: 100%; }
+
+  /* Leyenda */
+  .legend {
+    position: absolute; top: 16px; left: 16px;
+    background: rgba(6,12,26,0.92); border: 1px solid #1e3a5f;
+    border-radius: 6px; padding: 12px 16px; font-size: 0.82em;
+    pointer-events: none;
+  }
+  .legend-title { color: #88aaff; margin-bottom: 8px; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; color: #c8ffbe; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Controles */
+  .graph-controls {
+    position: absolute; top: 16px; right: 16px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .ctrl-btn {
+    background: #0d1526; border: 1px solid #1e3a5f; color: #88aaff;
+    padding: 6px 10px; border-radius: 4px; cursor: pointer;
+    font-family: monospace; font-size: 1em; transition: all 0.2s;
+    width: 34px; text-align: center;
+  }
+  .ctrl-btn:hover { border-color: #00ff88; color: #00ff88; }
+  .ctrl-btn.exp {
+    width: auto; font-size: .72em; padding: 6px 9px;
+    letter-spacing: .5px; line-height: 1.2;
+  }
+  .ctrl-btn.exp:hover { border-color: #88aaff; color: #88aaff; }
+
+  /* Panel de filtros */
+  .filter-panel {
+    position: absolute; bottom: 16px; left: 16px;
+    background: rgba(6,12,26,0.92); border: 1px solid #1e3a5f;
+    border-radius: 6px; padding: 10px 14px; font-size: 0.82em;
+  }
+  .filter-title {
+    color: #88aaff; margin-bottom: 8px; font-size: .82em;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .filter-btns { display: flex; flex-wrap: wrap; gap: 5px; }
+  .fbtn {
+    padding: 3px 9px; border-radius: 3px; cursor: pointer;
+    font-family: monospace; font-size: .76em;
+    border: 1px solid #1e3a5f; background: transparent; color: #334;
+    transition: all .2s;
+  }
+  .fbtn.active { border-color: var(--fc); color: var(--fc); background: rgba(0,0,0,.3); }
+  .fbtn:hover { opacity: .85; }
+
+  /* Tooltip */
+  .tooltip {
+    position: absolute; background: #0d1526; border: 1px solid #1e3a5f;
+    border-radius: 6px; padding: 10px 14px; pointer-events: none;
+    font-size: 0.82em; max-width: 240px; display: none;
+  }
+  .tooltip .tt-label { color: #00ff88; font-weight: bold; margin-bottom: 4px; word-break: break-all; }
+  .tooltip .tt-type { color: #88aaff; text-transform: uppercase; font-size: 0.78em; letter-spacing: 1px; }
+  .tooltip .tt-info { color: #c8ffbe; margin-top: 4px; }
+
+  /* Info panel derecho */
+  .info-panel {
+    background: #060c1a; border: 1px solid #1e3a5f; border-radius: 8px;
+    padding: 16px; margin-top: 16px; min-height: 80px;
+  }
+  .info-panel h3 { color: #00ff88; margin-bottom: 8px; font-size: 0.95em; }
+  .info-panel .empty { color: #445; font-size: 0.88em; }
+
+  /* Nada que mostrar */
+  .empty-graph { text-align: center; padding: 80px 20px; }
+  .empty-graph .big { font-size: 3em; margin-bottom: 16px; }
+  .empty-graph p { color: #445; }
+  .empty-graph a { color: #00ff88; }
+
+  /* Mini toast para exportaciones */
+  #graphToast {
+    position: absolute; bottom: 16px; right: 16px;
+    background: rgba(13,21,38,.95); border: 1px solid #00ff88; border-radius: 5px;
+    padding: 8px 14px; color: #00ff88; font-size: .78em;
+    pointer-events: none; opacity: 0; transition: opacity .3s;
+  }
+  #graphToast.show { opacity: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>&#x1F578; Grafo de Relaciones</h1>
+
+<script>
+  const GRAPH_DATA = {{ graph_json|safe }};
+</script>
+
+{% if graph_json != '{"nodes": [], "links": []}' %}
+
+<div class="card" style="padding:0; overflow:visible; border:none; background:transparent;">
+
+  <div class="graph-wrap" id="graph-container">
+    <svg id="graph-svg"></svg>
+
+    <!-- Leyenda -->
+    <div class="legend">
+      <div class="legend-title">Tipos de nodo</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#00ff88;"></div> Dominio</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#88aaff;"></div> IP</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffaa44;"></div> Email</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#aa88ff;"></div> Name Server</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff88aa;"></div> Mail Server</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#44aaff;"></div> ISP / ASN</div>
+    </div>
+
+    <!-- Controles zoom + exportar -->
+    <div class="graph-controls">
+      <button class="ctrl-btn" id="btn-zoom-in"  title="Acercar">+</button>
+      <button class="ctrl-btn" id="btn-zoom-out" title="Alejar">−</button>
+      <button class="ctrl-btn" id="btn-reset"    title="Resetear vista">&#x25CE;</button>
+      <button class="ctrl-btn exp" id="btn-export-svg" title="Exportar como SVG">SVG</button>
+      <button class="ctrl-btn exp" id="btn-export-png" title="Exportar como PNG">PNG</button>
+    </div>
+
+    <!-- Panel de filtros por tipo -->
+    <div class="filter-panel">
+      <div class="filter-title">Filtrar nodos</div>
+      <div class="filter-btns" id="filterBtns">
+        <button class="fbtn active" data-types="domain" style="--fc:#00ff88">Dominio</button>
+        <button class="fbtn active" data-types="ip"     style="--fc:#88aaff">IP</button>
+        <button class="fbtn active" data-types="email"  style="--fc:#ffaa44">Email</button>
+        <button class="fbtn active" data-types="ns"     style="--fc:#aa88ff">NS</button>
+        <button class="fbtn active" data-types="mx"     style="--fc:#ff88aa">MX</button>
+        <button class="fbtn active" data-types="isp,asn" style="--fc:#44aaff">ISP/ASN</button>
+      </div>
+    </div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip">
+      <div class="tt-type" id="tt-type"></div>
+      <div class="tt-label" id="tt-label"></div>
+      <div class="tt-info" id="tt-info"></div>
+    </div>
+
+    <!-- Toast interno -->
+    <div id="graphToast"></div>
+  </div>
+
+  <!-- Panel de información del nodo seleccionado -->
+  <div class="info-panel" id="info-panel">
+    <span class="empty">Haz clic en un nodo para ver sus conexiones.</span>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script>
+(function () {
+  const data = GRAPH_DATA;
+  if (!data.nodes.length) return;
+
+  // ── Colores por tipo ──────────────────────────
+  const COLOR = {
+    domain: "#00ff88",
+    ip:     "#88aaff",
+    email:  "#ffaa44",
+    ns:     "#aa88ff",
+    mx:     "#ff88aa",
+    isp:    "#44aaff",
+    asn:    "#44aaff",
+  };
+  const RADIUS = {
+    domain: 14, ip: 12, email: 13, ns: 9, mx: 9, isp: 10, asn: 10,
+  };
+  const TYPE_LABEL = {
+    domain: "Dominio", ip: "IP", email: "Email",
+    ns: "Name Server", mx: "Mail Server", isp: "ISP", asn: "ASN",
+  };
+
+  // ── SVG setup ────────────────────────────────
+  const container = document.getElementById("graph-container");
+  const W = container.clientWidth;
+  const H = container.clientHeight;
+  const svg = d3.select("#graph-svg");
+  const g   = svg.append("g");
+
+  // ── Zoom ─────────────────────────────────────
+  const zoom = d3.zoom()
+    .scaleExtent([0.2, 4])
+    .on("zoom", (event) => g.attr("transform", event.transform));
+  svg.call(zoom);
+
+  document.getElementById("btn-zoom-in").onclick  = () => svg.transition().call(zoom.scaleBy, 1.4);
+  document.getElementById("btn-zoom-out").onclick = () => svg.transition().call(zoom.scaleBy, 0.7);
+  document.getElementById("btn-reset").onclick    = () => svg.transition().call(zoom.transform, d3.zoomIdentity);
+
+  // ── Simulación ───────────────────────────────
+  const simulation = d3.forceSimulation(data.nodes)
+    .force("link",   d3.forceLink(data.links).id(d => d.id).distance(110))
+    .force("charge", d3.forceManyBody().strength(-320))
+    .force("center", d3.forceCenter(W / 2, H / 2))
+    .force("collide", d3.forceCollide().radius(d => RADIUS[d.type] + 18));
+
+  // ── Flechas (marcadores) ──────────────────────
+  svg.append("defs").selectAll("marker")
+    .data(["arrow"])
+    .join("marker")
+      .attr("id", "arrow")
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 22)
+      .attr("refY", 0)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+    .append("path")
+      .attr("d", "M0,-5L10,0L0,5")
+      .attr("fill", "#1e3a5f");
+
+  // ── Links ────────────────────────────────────
+  const link = g.append("g")
+    .selectAll("line")
+    .data(data.links)
+    .join("line")
+      .attr("stroke", "#1e3a5f")
+      .attr("stroke-width", 1.5)
+      .attr("marker-end", "url(#arrow)");
+
+  // ── Link labels ──────────────────────────────
+  const linkLabel = g.append("g")
+    .selectAll("text")
+    .data(data.links)
+    .join("text")
+      .text(d => d.label)
+      .attr("fill", "#334")
+      .attr("font-size", "9px")
+      .attr("font-family", "monospace")
+      .attr("text-anchor", "middle");
+
+  // ── Nodos ────────────────────────────────────
+  const node = g.append("g")
+    .selectAll("g")
+    .data(data.nodes)
+    .join("g")
+      .attr("cursor", "pointer")
+      .call(d3.drag()
+        .on("start", (event, d) => {
+          if (!event.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x; d.fy = d.y;
+        })
+        .on("drag", (event, d) => { d.fx = event.x; d.fy = event.y; })
+        .on("end",  (event, d) => {
+          if (!event.active) simulation.alphaTarget(0);
+          d.fx = null; d.fy = null;
+        })
+      );
+
+  // Círculo principal
+  node.append("circle")
+    .attr("r", d => RADIUS[d.type] || 10)
+    .attr("fill", d => COLOR[d.type] || "#888")
+    .attr("fill-opacity", 0.18)
+    .attr("stroke", d => COLOR[d.type] || "#888")
+    .attr("stroke-width", 2);
+
+  // Punto interior
+  node.append("circle")
+    .attr("r", 3)
+    .attr("fill", d => COLOR[d.type] || "#888");
+
+  // Etiqueta de texto
+  node.append("text")
+    .text(d => d.label.length > 22 ? d.label.slice(0, 20) + "…" : d.label)
+    .attr("fill", "#c8ffbe")
+    .attr("font-size", "10px")
+    .attr("font-family", "monospace")
+    .attr("text-anchor", "middle")
+    .attr("dy", d => (RADIUS[d.type] || 10) + 13);
+
+  // ── Tooltip ──────────────────────────────────
+  const tooltip  = document.getElementById("tooltip");
+  const ttType   = document.getElementById("tt-type");
+  const ttLabel  = document.getElementById("tt-label");
+  const ttInfo   = document.getElementById("tt-info");
+  const infoPanel = document.getElementById("info-panel");
+
+  node
+    .on("mouseover", function (event, d) {
+      tooltip.style.display = "block";
+      ttType.textContent  = TYPE_LABEL[d.type] || d.type;
+      ttLabel.textContent = d.label;
+      ttInfo.textContent  = d.info || "";
+    })
+    .on("mousemove", function (event) {
+      const rect = container.getBoundingClientRect();
+      let x = event.clientX - rect.left + 14;
+      let y = event.clientY - rect.top  + 14;
+      if (x + 250 > rect.width)  x -= 265;
+      if (y + 80  > rect.height) y -= 90;
+      tooltip.style.left = x + "px";
+      tooltip.style.top  = y + "px";
+    })
+    .on("mouseout", function () {
+      tooltip.style.display = "none";
+    })
+    .on("click", function (event, d) {
+      // Resaltar nodo y vecinos
+      const connected = new Set([d.id]);
+      data.links.forEach(l => {
+        const src = typeof l.source === "object" ? l.source.id : l.source;
+        const tgt = typeof l.target === "object" ? l.target.id : l.target;
+        if (src === d.id) connected.add(tgt);
+        if (tgt === d.id) connected.add(src);
+      });
+
+      node.select("circle:first-of-type")
+        .attr("fill-opacity", n => connected.has(n.id) ? 0.45 : 0.08)
+        .attr("stroke-opacity", n => connected.has(n.id) ? 1 : 0.3);
+
+      link
+        .attr("stroke", l => {
+          const s = typeof l.source === "object" ? l.source.id : l.source;
+          const t = typeof l.target === "object" ? l.target.id : l.target;
+          return (s === d.id || t === d.id) ? "#00ff88" : "#1e3a5f";
+        })
+        .attr("stroke-opacity", l => {
+          const s = typeof l.source === "object" ? l.source.id : l.source;
+          const t = typeof l.target === "object" ? l.target.id : l.target;
+          return (s === d.id || t === d.id) ? 1 : 0.2;
+        });
+
+      // Panel de info
+      const neighbors = data.links
+        .filter(l => {
+          const s = typeof l.source === "object" ? l.source.id : l.source;
+          const t = typeof l.target === "object" ? l.target.id : l.target;
+          return s === d.id || t === d.id;
+        })
+        .map(l => {
+          const s = typeof l.source === "object" ? l.source.id : l.source;
+          const t = typeof l.target === "object" ? l.target.id : l.target;
+          const other = s === d.id ? t : s;
+          return `<span style="color:#88aaff">[${l.label}]</span> ${other.split(":")[1]}`;
+        });
+
+      infoPanel.innerHTML = `
+        <h3>${TYPE_LABEL[d.type] || d.type}: <span style="color:#c8ffbe">${d.label}</span></h3>
+        ${d.info ? `<p style="color:#88aaff;font-size:0.85em;margin-bottom:8px;">${d.info}</p>` : ""}
+        ${neighbors.length
+          ? `<p style="color:#445;font-size:0.8em;margin-bottom:4px;">CONEXIONES (${neighbors.length})</p>
+             <div style="display:flex;flex-wrap:wrap;gap:6px;">${neighbors.map(n => `<span class="tag">${n}</span>`).join("")}</div>`
+          : `<span class="empty" style="color:#445;font-size:0.88em;">Sin conexiones.</span>`
+        }
+      `;
+    });
+
+  // ── Tick ─────────────────────────────────────
+  simulation.on("tick", () => {
+    link
+      .attr("x1", d => d.source.x)
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y);
+
+    linkLabel
+      .attr("x", d => (d.source.x + d.target.x) / 2)
+      .attr("y", d => (d.source.y + d.target.y) / 2);
+
+    node.attr("transform", d => `translate(${d.x},${d.y})`);
+  });
+
+  // Centrar vista inicial al estabilizar
+  simulation.on("end", () => {
+    svg.transition().duration(600)
+      .call(zoom.transform, d3.zoomIdentity.translate(W/2, H/2).scale(0.9).translate(-W/2, -H/2));
+  });
+
+  // ── Filtros por tipo ──────────────────────────
+  const activeTypes = new Set(["domain", "ip", "email", "ns", "mx", "isp", "asn"]);
+
+  function applyFilter() {
+    node.style("display", d => activeTypes.has(d.type) ? null : "none");
+    link.style("display", l => {
+      const sType = typeof l.source === "object" ? l.source.type : "";
+      const tType = typeof l.target === "object" ? l.target.type : "";
+      return (activeTypes.has(sType) && activeTypes.has(tType)) ? null : "none";
+    });
+    linkLabel.style("display", l => {
+      const sType = typeof l.source === "object" ? l.source.type : "";
+      const tType = typeof l.target === "object" ? l.target.type : "";
+      return (activeTypes.has(sType) && activeTypes.has(tType)) ? null : "none";
+    });
+  }
+
+  document.querySelectorAll(".fbtn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const types = btn.dataset.types.split(",");
+      const allActive = types.every(t => activeTypes.has(t));
+      types.forEach(t => {
+        if (allActive) activeTypes.delete(t);
+        else activeTypes.add(t);
+      });
+      btn.classList.toggle("active", !allActive);
+      applyFilter();
+    });
+  });
+
+})();
+
+// ── Helpers de exportación ────────────────────────────────
+function _buildExportSVG() {
+  const svgEl = document.getElementById("graph-svg");
+  const W = svgEl.clientWidth || 900;
+  const H = svgEl.clientHeight || 620;
+  const clone = svgEl.cloneNode(true);
+  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  clone.setAttribute("width", W);
+  clone.setAttribute("height", H);
+  // Fondo
+  const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  bg.setAttribute("width", "100%");
+  bg.setAttribute("height", "100%");
+  bg.setAttribute("fill", "#060c1a");
+  clone.insertBefore(bg, clone.firstChild);
+  return { clone, W, H };
+}
+
+function _showGraphToast(msg) {
+  const t = document.getElementById("graphToast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+document.getElementById("btn-export-svg").addEventListener("click", function () {
+  const { clone } = _buildExportSVG();
+  const str = new XMLSerializer().serializeToString(clone);
+  const blob = new Blob([str], { type: "image/svg+xml" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "grafo-osint.svg";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  _showGraphToast("SVG exportado ✓");
+});
+
+document.getElementById("btn-export-png").addEventListener("click", function () {
+  const { clone, W, H } = _buildExportSVG();
+  const str = new XMLSerializer().serializeToString(clone);
+  const blob = new Blob([str], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width  = W * 2;
+    canvas.height = H * 2;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(2, 2);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    const a = document.createElement("a");
+    a.download = "grafo-osint.png";
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+    _showGraphToast("PNG exportado ✓");
+  };
+  img.src = url;
+});
+</script>
+
+{% else %}
+
+<div class="card empty-graph">
+  <div class="big">&#x1F578;</div>
+  <p>No hay datos suficientes para construir el grafo.</p>
+  <p style="margin-top:8px; font-size:0.9em;">
+    Realiza búsquedas de
+    <a href="/buscar/ip/">IPs</a>,
+    <a href="/buscar/dominio/">dominios</a> o
+    <a href="/buscar/email/">emails</a> primero.
+  </p>
+</div>
+
+{% endif %}
+{% endblock %}

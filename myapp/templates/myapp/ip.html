@@ -44,6 +44,14 @@
 <!-- Resultados -->
 {% if result %}
 
+<!-- Export + AI -->
+<div class="export-bar">
+  <button class="btn-export" onclick="doExportIP()">&#x2B07; Exportar JSON</button>
+  <button class="btn-export" onclick="window.print()">&#x1F5A8; Exportar PDF</button>
+  <button class="ai-btn" id="aiBtnIP" onclick="doAIIP()">&#x1F916; Analizar con IA</button>
+</div>
+<div id="aiResultIP"></div>
+
 <!-- Cabecera con IP y ubicación -->
 <div class="card">
   <h2>{{ result.ip }}
@@ -117,6 +125,16 @@
         {% if result.is_hosting %}<span class="tag tag-red">Sí</span>{% else %}<span class="tag">No</span>{% endif %}
       </span>
     </div>
+    <div class="data-row"><span class="data-label">Reverse DNS</span>
+      <span class="data-value">
+        {% if result.reverse_dns %}
+          {{ result.reverse_dns }}
+          &nbsp;<a href="{% url 'buscar_dominio' %}?autoload={{ result.reverse_dns }}" style="font-size:.8em; color:var(--text2);" title="Buscar este dominio">&#x2192; ver dominio</a>
+        {% else %}
+          <span style="color:#445;">Sin PTR</span>
+        {% endif %}
+      </span>
+    </div>
   </div>
 
 </div>
@@ -131,5 +149,20 @@
 </div>
 {% endwith %}
 
+<script>
+const _ipData = {
+  ip: "{{ result.ip }}",
+  country: "{{ result.country }}", country_code: "{{ result.country_code }}",
+  region: "{{ result.region }}", city: "{{ result.city }}",
+  latitude: {{ result.latitude|default:"null" }}, longitude: {{ result.longitude|default:"null" }},
+  isp: "{{ result.isp }}", org: "{{ result.org }}", asn: "{{ result.asn }}",
+  timezone: "{{ result.timezone }}",
+  is_proxy: {{ result.is_proxy|yesno:"true,false" }},
+  is_hosting: {{ result.is_hosting|yesno:"true,false" }},
+};
+function doExportIP() { exportJSON(_ipData, "ip_{{ result.ip }}.json"); }
+function doAIIP() { analyzeWithAI("ip", _ipData, document.getElementById("aiBtnIP"), document.getElementById("aiResultIP")); }
+window.osintAddRecent && osintAddRecent("ip", "{{ result.ip }}");
+</script>
 {% endif %}
 {% endblock %}

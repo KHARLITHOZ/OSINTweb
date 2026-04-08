@@ -5,85 +5,290 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}OSINTng{% endblock %}</title>
   <style>
+    :root {
+      --bg:      #0a0f1e;
+      --bg2:     #0d1526;
+      --bg3:     #060c1a;
+      --border:  #1e3a5f;
+      --accent:  #00ff88;
+      --accent2: #00cc66;
+      --text:    #c8ffbe;
+      --text2:   #88aaff;
+      --warn:    #ff8800;
+      --danger:  #ff3333;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0a0f1e; color: #c8ffbe; font-family: 'Courier New', monospace; min-height: 100vh; }
+    body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; min-height: 100vh; }
+
+    /* ── Nav ──────────────────────────────── */
     nav {
-      background: #000000;
-      border-bottom: 1px solid #00b661;
-      padding: 12px 24px;
+      background: #000;
+      border-bottom: 1px solid var(--accent);
+      padding: 10px 24px;
       display: flex;
       align-items: center;
-      gap: 24px;
+      gap: 4px;
       flex-wrap: wrap;
     }
-    nav .brand { font-size: 1.3em; font-weight: bold; color: #03d372; letter-spacing: 2px; }
-    nav a { color: #88aaff; text-decoration: none; padding: 6px 12px; border-radius: 4px; transition: background 0.2s; }
-    nav a:hover { background: #1a2540; color: #00ff88; }
+    nav .brand { font-size: 1.2em; font-weight: bold; color: var(--accent); letter-spacing: 2px; margin-right: 12px; white-space: nowrap; }
+    nav a {
+      color: var(--text2); text-decoration: none; padding: 5px 11px;
+      border-radius: 4px; transition: background 0.2s; font-size: 0.9em; white-space: nowrap;
+    }
+    nav a:hover { background: #1a2540; color: var(--accent); }
+    nav a.nav-active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+    .nav-spacer { flex: 1; }
+    .nav-user {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.8em; color: #556; white-space: nowrap;
+    }
+    .nav-user span { color: var(--text2); }
+    .btn-logout {
+      background: transparent; border: 1px solid #334; color: #556;
+      padding: 4px 10px; border-radius: 4px; font-family: inherit; font-size: 0.8em;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ── Layout ───────────────────────────── */
     .container { max-width: 960px; margin: 40px auto; padding: 0 20px; }
-    .card { background: #0d1526; border: 1px solid #1e3a5f; border-radius: 8px; padding: 28px; margin-bottom: 24px; }
-    h1, h2, h3 { color: #00ff88; margin-bottom: 16px; }
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 28px; margin-bottom: 24px; }
+
+    /* ── Tipografía ───────────────────────── */
+    h1, h2, h3 { color: var(--accent); margin-bottom: 16px; }
     h1 { font-size: 1.6em; letter-spacing: 1px; }
     h2 { font-size: 1.2em; }
-    h3 { font-size: 1em; color: #88aaff; }
+    h3 { font-size: 1em; color: var(--text2); }
+
+    /* ── Formularios ──────────────────────── */
     .form-group { margin-bottom: 16px; }
-    label { display: block; color: #88aaff; margin-bottom: 6px; font-size: 0.9em; }
-    input[type="text"] {
-      width: 100%; background: #060c1a; border: 1px solid #1e3a5f;
-      border-radius: 4px; color: #c8ffbe; padding: 10px 14px;
-      font-family: inherit; font-size: 1em; outline: none; transition: border-color 0.2s;
+    label { display: block; color: var(--text2); margin-bottom: 6px; font-size: 0.9em; }
+    input[type="text"], input[type="email"], input[type="password"] {
+      width: 100%; background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 4px; color: var(--text); padding: 10px 14px;
+      font-family: inherit; font-size: 1em; outline: none; transition: border-color 0.3s;
     }
-    input:focus { border-color: #00ff88; }
-    button {
-      background: #00ff88; color: #0a0f1e; border: none; padding: 10px 24px;
+    input:focus { border-color: var(--accent); }
+    button, .btn {
+      background: var(--accent); color: var(--bg); border: none; padding: 10px 24px;
       border-radius: 4px; font-family: inherit; font-weight: bold;
-      font-size: 1em; cursor: pointer; transition: background 0.2s;
+      font-size: 1em; cursor: pointer; transition: background 0.3s;
     }
-    button:hover { background: #00cc66; }
+    button:hover, .btn:hover { background: var(--accent2); }
+    button:disabled { background: #334; color: #556; cursor: not-allowed; }
     .btn-sec {
-      background: transparent; border: 1px solid #88aaff; color: #88aaff;
+      background: transparent; border: 1px solid var(--text2); color: var(--text2);
       padding: 8px 18px; border-radius: 4px; font-family: inherit;
       cursor: pointer; font-size: 0.9em; transition: all 0.2s;
     }
-    .btn-sec:hover { background: #88aaff; color: #0a0f1e; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #1e3a5f; }
-    th { color: #88aaff; font-size: 0.85em; text-transform: uppercase; }
-    td { color: #c8ffbe; word-break: break-word; }
-    .tag {
-      display: inline-block; background: #1a2540; border: 1px solid #00ff88;
-      border-radius: 3px; padding: 2px 8px; font-size: 0.8em; margin: 2px; color: #00ff88;
+    .btn-sec:hover { background: var(--text2); color: var(--bg); }
+
+    /* ── Export bar ───────────────────────── */
+    .export-bar {
+      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center;
     }
-    .tag-red { border-color: #ff3333; color: #ff6666; background: #2a0000; }
+    .btn-export {
+      background: transparent; border: 1px solid var(--border); color: var(--text2);
+      padding: 6px 14px; border-radius: 4px; font-family: inherit; font-size: 0.85em;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-export:hover { border-color: var(--accent); color: var(--accent); }
+    .ai-btn {
+      background: #0a1a30; border: 1px solid var(--text2); color: var(--text2);
+      padding: 6px 14px; border-radius: 4px; font-family: inherit; font-size: 0.85em;
+      cursor: pointer; transition: all 0.2s; margin-left: auto;
+    }
+    .ai-btn:hover { border-color: var(--accent); color: var(--accent); background: #0d1f3a; }
+    .ai-btn:disabled { color: #445; border-color: #334; cursor: not-allowed; background: transparent; }
+
+    /* ── AI result box ────────────────────── */
+    .ai-result {
+      background: #060f1e; border: 1px solid #1e3a5f; border-left: 3px solid var(--text2);
+      border-radius: 6px; padding: 16px; margin-bottom: 16px; font-size: 0.9em;
+      line-height: 1.6; color: var(--text); white-space: pre-wrap;
+      display: none;
+    }
+    .ai-result.visible { display: block; }
+
+    /* ── Tablas ───────────────────────────── */
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    th { color: var(--text2); font-size: 0.85em; text-transform: uppercase; }
+    td { color: var(--text); word-break: break-word; }
+
+    /* ── Tags ─────────────────────────────── */
+    .tag {
+      display: inline-block; background: #1a2540; border: 1px solid var(--accent);
+      border-radius: 3px; padding: 2px 8px; font-size: 0.8em; margin: 2px; color: var(--accent);
+    }
+    .tag-red { border-color: var(--danger); color: #ff6666; background: #2a0000; }
+    .tag-warn { border-color: var(--warn); color: var(--warn); background: #2a1a00; }
+
+    /* ── Alertas ──────────────────────────── */
     .alert { padding: 12px 16px; border-radius: 4px; margin-bottom: 16px; }
-    .alert-warn  { background: #2a1a00; border: 1px solid #ff8800; color: #ffaa44; }
-    .alert-danger{ background: #2a0000; border: 1px solid #ff3333; color: #ff6666; }
-    .alert-ok    { background: #002a10; border: 1px solid #00ff88; color: #00ff88; }
-    .alert-info  { background: #001a2a; border: 1px solid #88aaff; color: #88aaff; }
+    .alert-warn  { background: #2a1a00; border: 1px solid var(--warn); color: #ffaa44; }
+    .alert-danger{ background: #2a0000; border: 1px solid var(--danger); color: #ff6666; }
+    .alert-ok    { background: #002a10; border: 1px solid var(--accent); color: var(--accent); }
+    .alert-info  { background: #001a2a; border: 1px solid var(--text2); color: var(--text2); }
+
+    /* ── Grid ─────────────────────────────── */
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     @media (max-width: 640px) { .grid-3, .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ── Stat cards ───────────────────────── */
     .stat-card {
-      background: #060c1a; border: 1px solid #1e3a5f; border-radius: 6px;
+      background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
       padding: 20px; text-align: center;
     }
-    .stat-card .num { font-size: 2em; color: #00ff88; font-weight: bold; }
-    .stat-card .lbl { font-size: 0.85em; color: #88aaff; margin-top: 4px; }
-    pre { background: #060c1a; padding: 14px; border-radius: 4px; overflow-x: auto; font-size: 0.85em; color: #c8ffbe; border: 1px solid #1e3a5f; white-space: pre-wrap; }
+    .stat-card .num { font-size: 2em; color: var(--accent); font-weight: bold; }
+    .stat-card .lbl { font-size: 0.85em; color: var(--text2); margin-top: 4px; }
+
+    /* ── Pre ──────────────────────────────── */
+    pre { background: var(--bg3); padding: 14px; border-radius: 4px; overflow-x: auto;
+          font-size: 0.85em; color: var(--text); border: 1px solid var(--border);
+          white-space: pre-wrap; }
+
+    /* ── Copy button ──────────────────────── */
+    .copyable { cursor: pointer; }
+    .copyable:hover { text-decoration: underline; color: var(--accent); }
+    .copy-icon { font-size: 0.75em; opacity: 0.5; margin-left: 4px; user-select: none; }
+    .copy-icon:hover { opacity: 1; }
+
+    /* ── Loading spinner ──────────────────── */
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .loading-text { animation: blink 1s ease-in-out infinite; color: var(--accent); }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
 <body>
   <nav>
     <span class="brand">&#91; OSINT &#93;</span>
-    <a href="/">Inicio</a>
-    <a href="/buscar/ip/">IP</a>
-    <a href="/buscar/dominio/">Dominio</a>
-    <a href="/buscar/email/">Email</a>
-    <a href="/grafo/">Grafo</a>
-    <a href="/historial/">Historial</a>
+    {% with url_name=request.resolver_match.url_name %}
+    <a href="{% url 'home' %}" {% if url_name == 'home' %}class="nav-active"{% endif %}>Inicio</a>
+    <a href="{% url 'buscar_ip' %}" {% if url_name == 'buscar_ip' %}class="nav-active"{% endif %}>IP</a>
+    <a href="{% url 'buscar_dominio' %}" {% if url_name == 'buscar_dominio' %}class="nav-active"{% endif %}>Dominio</a>
+    <a href="{% url 'buscar_email' %}" {% if url_name == 'buscar_email' %}class="nav-active"{% endif %}>Email</a>
+    <a href="{% url 'comparar_dominios' %}" {% if url_name == 'comparar_dominios' %}class="nav-active"{% endif %}>Comparar</a>
+    <a href="{% url 'grafo' %}" {% if url_name == 'grafo' %}class="nav-active"{% endif %}>Grafo</a>
+    <a href="{% url 'historial' %}" {% if url_name == 'historial' %}class="nav-active"{% endif %}>Historial</a>
+    {% endwith %}
+    <div class="nav-spacer"></div>
+    {% if user.is_authenticated %}
+    <div class="nav-user">
+      <span>{{ user.username }}</span>
+      <form method="post" action="{% url 'logout' %}" style="display:inline;margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="btn-logout">[ salir ]</button>
+      </form>
+    </div>
+    {% endif %}
   </nav>
+
   <div class="container">
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="alert alert-ok">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
     {% block content %}{% endblock %}
   </div>
+
+  <footer style="text-align:center; padding: 20px; color: #334; font-size: 0.8em; border-top: 1px solid var(--border); margin-top: 40px;">
+    &copy; {% now "Y" %} OSINTng &mdash; RochiMX
+  </footer>
+
+  <script>
+  // ── Loading state en formularios ─────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('form[method="post"]').forEach(function(form) {
+      // Solo formularios OSINT (no login/logout/register)
+      var hasOsintInput = form.querySelector('input[name="ip"], input[name="dominio"], input[name="email"]');
+      if (!hasOsintInput) return;
+      form.addEventListener('submit', function() {
+        var btn = form.querySelector('button[type="submit"]');
+        if (btn && !btn.disabled) {
+          btn.textContent = '[ buscando... ]';
+          btn.classList.add('loading-text');
+          btn.disabled = true;
+        }
+      });
+    });
+  });
+
+  // ── Copy to clipboard ────────────────────────────────────────────────────
+  function copyText(text, el) {
+    navigator.clipboard.writeText(text).then(function() {
+      var orig = el ? el.textContent : '';
+      if (el) { el.textContent = '✓'; setTimeout(function(){ el.textContent = orig; }, 1200); }
+    }).catch(function() {
+      // Fallback para navegadores sin clipboard API
+      var ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    });
+  }
+
+  // ── Export JSON ──────────────────────────────────────────────────────────
+  function exportJSON(data, filename) {
+    var blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url; a.download = filename || 'osint_export.json';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+
+  // ── Análisis con IA ──────────────────────────────────────────────────────
+  function analyzeWithAI(type, data, btn, resultEl) {
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = '[ analizando... ]';
+    if (resultEl) { resultEl.className = 'ai-result'; resultEl.textContent = ''; }
+
+    fetch('{% url "api_analyze" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify({type: type, data: data}),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(json) {
+      if (resultEl) {
+        resultEl.textContent = json.analysis || json.error || 'Sin respuesta.';
+        resultEl.className = 'ai-result visible';
+      }
+      if (btn) { btn.disabled = false; btn.textContent = '🤖 Analizar con IA'; }
+    })
+    .catch(function(err) {
+      if (resultEl) { resultEl.textContent = 'Error de red: ' + err; resultEl.className = 'ai-result visible'; }
+      if (btn) { btn.disabled = false; btn.textContent = '🤖 Analizar con IA'; }
+    });
+  }
+
+  // ── CSRF helper ──────────────────────────────────────────────────────────
+  function getCookie(name) {
+    var val = null;
+    document.cookie.split(';').forEach(function(c) {
+      var p = c.trim().split('=');
+      if (p[0] === name) val = decodeURIComponent(p[1]);
+    });
+    return val;
+  }
+
+  // ── Búsquedas recientes (localStorage) ───────────────────────────────────
+  function osintAddRecent(type, query) {
+    try {
+      var key = 'osint_recent';
+      var list = JSON.parse(localStorage.getItem(key) || '[]');
+      list = list.filter(function(x){ return !(x.type===type && x.query===query); });
+      list.unshift({type: type, query: query, ts: Date.now()});
+      if (list.length > 20) list = list.slice(0, 20);
+      localStorage.setItem(key, JSON.stringify(list));
+    } catch(e) {}
+  }
+  </script>
 </body>
 </html>

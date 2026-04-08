@@ -1,0 +1,124 @@
+{% extends "myapp/base.html" %}
+{% block title %}Inicio — OSINTng{% endblock %}
+
+{% block extra_head %}
+<style>
+  .hero { text-align: center; padding: 60px 20px 40px; }
+  .hero h1 { font-size: 2.4em; letter-spacing: 4px; margin-bottom: 12px; }
+  .hero p { color: #88aaff; font-size: 1.05em; max-width: 560px; margin: 0 auto 32px; line-height: 1.6; }
+  .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 8px; }
+  .tool-card {
+    background: #060c1a; border: 1px solid #1e3a5f; border-radius: 8px;
+    padding: 28px 20px; text-align: center; text-decoration: none;
+    transition: border-color 0.2s, transform 0.2s;
+    display: block;
+  }
+  .tool-card:hover { border-color: #00ff88; transform: translateY(-2px); }
+  .tool-card .icon { font-size: 2em; margin-bottom: 12px; }
+  .tool-card .name { color: #00ff88; font-weight: bold; font-size: 1.05em; margin-bottom: 6px; }
+  .tool-card .desc { color: #88aaff; font-size: 0.82em; line-height: 1.5; }
+  .quick-search { display: flex; gap: 10px; max-width: 560px; margin: 0 auto; }
+  .quick-search input { flex: 1; }
+  .cursor { animation: blink 1s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .status-bar {
+    background: #060c1a; border: 1px solid #1e3a5f; border-radius: 6px;
+    padding: 12px 20px; display: flex; gap: 32px; flex-wrap: wrap;
+    font-size: 0.85em; margin-bottom: 24px;
+  }
+  .status-item { display: flex; gap: 8px; align-items: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #00ff88; }
+  .dot-off { background: #ff3333; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="hero">
+  <h1>[ OSINT ]</h1>
+  <p><span id="typing-text"></span><span class="cursor">_</span></p>
+</div>
+<script>
+(function() {
+  const phrases = [
+    "Analiza IPs, dominios y correos electrónicos.",
+    "Inteligencia en fuentes abiertas.",
+    "Investiga la infraestructura digital.",
+    "OSINT profesional y sin API keys.",
+    "Mapea relaciones entre entidades.",
+  ];
+  let pi = 0, ci = 0, deleting = false;
+  const el = document.getElementById('typing-text');
+  function tick() {
+    const phrase = phrases[pi];
+    if (!deleting) {
+      el.textContent = phrase.slice(0, ++ci);
+      if (ci === phrase.length) { deleting = true; setTimeout(tick, 1800); return; }
+    } else {
+      el.textContent = phrase.slice(0, --ci);
+      if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; setTimeout(tick, 400); return; }
+    }
+    setTimeout(tick, deleting ? 40 : 65);
+  }
+  tick();
+})();
+</script>
+
+<!-- Estado de servicios -->
+<div class="status-bar">
+  <span class="status-item"><span class="dot"></span> IP Lookup (ip-api.com)</span>
+  <span class="status-item"><span class="dot"></span> WHOIS / DNS</span>
+  <span class="status-item"><span class="dot"></span> Historial persistente</span>
+  <span class="status-item"><span class="dot"></span> Análisis IA (Claude)</span>
+</div>
+
+<!-- Herramientas -->
+<div class="card">
+  <h2>Herramientas</h2>
+  <div class="tools-grid">
+
+    <a href="/buscar/ip/" class="tool-card">
+      <div class="icon">&#x1F5A7;</div>
+      <div class="name">IP Lookup</div>
+      <div class="desc">Geolocalización, ASN, ISP, detección de proxy y hosting</div>
+    </a>
+
+    <a href="/buscar/dominio/" class="tool-card">
+      <div class="icon">&#x1F310;</div>
+      <div class="name">Dominio</div>
+      <div class="desc">WHOIS, registrar, fechas, registros DNS (A, MX, NS, TXT, CNAME)</div>
+    </a>
+
+    <a href="/buscar/email/" class="tool-card">
+      <div class="icon">&#x2709;</div>
+      <div class="name">Email</div>
+      <div class="desc">Verificación de filtraciones y brechas de datos conocidas</div>
+    </a>
+
+    <a href="/historial/" class="tool-card">
+      <div class="icon">&#x1F4CB;</div>
+      <div class="name">Historial</div>
+      <div class="desc">Registro de todas las consultas realizadas en esta plataforma</div>
+    </a>
+
+    <a href="/grafo/" class="tool-card">
+      <div class="icon">&#x1F578;</div>
+      <div class="name">Grafo</div>
+      <div class="desc">Visualización de relaciones entre entidades investigadas</div>
+    </a>
+
+    <a href="/buscar/comparar/" class="tool-card">
+      <div class="icon">&#x2194;</div>
+      <div class="name">Comparar</div>
+      <div class="desc">Comparación lado a lado de dos dominios (WHOIS + DNS)</div>
+    </a>
+
+  </div>
+</div>
+
+<!-- Aviso -->
+<div class="alert alert-info">
+  &#x2139; Esta plataforma usa únicamente fuentes públicas y APIs gratuitas. Úsala de forma ética y responsable.
+</div>
+
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends "myapp/base.html" %}
+{% block title %}Historial — OSINTng{% endblock %}
+
+{% block extra_head %}
+<style>
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 3px;
+    font-size: 0.78em; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+  }
+  .badge-ip     { background: #001a2a; border: 1px solid #88aaff; color: #88aaff; }
+  .badge-domain { background: #002a10; border: 1px solid #00ff88; color: #00ff88; }
+  .badge-email  { background: #2a1a00; border: 1px solid #ff8800; color: #ffaa44; }
+  .badge-ok  { background: #002a10; border: 1px solid #00ff88; color: #00ff88; }
+  .badge-err { background: #2a0000; border: 1px solid #ff3333; color: #ff6666; }
+  .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .filter-bar a {
+    padding: 5px 14px; border-radius: 4px; font-size: 0.85em;
+    border: 1px solid #1e3a5f; color: #88aaff; text-decoration: none; transition: all 0.2s;
+  }
+  .filter-bar a:hover, .filter-bar a.active { background: #00ff88; color: #0a0f1e; border-color: #00ff88; }
+  .filter-bar .count { color: #445; font-size: 0.8em; margin-left: auto; }
+  tr:hover td { background: #0d1a30; }
+  .query-link { color: #00ff88; text-decoration: none; }
+  .query-link:hover { text-decoration: underline; }
+  .pagination { display: flex; gap: 8px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+  .pagination a, .pagination span {
+    padding: 6px 14px; border-radius: 4px; border: 1px solid #1e3a5f;
+    color: #88aaff; text-decoration: none; font-size: 0.9em; transition: all 0.2s;
+  }
+  .pagination a:hover { border-color: #00ff88; color: #00ff88; }
+  .pagination .current { background: #00ff88; color: #0a0f1e; border-color: #00ff88; font-weight: bold; }
+  .pagination .disabled { color: #333; cursor: default; }
+  .empty-state { text-align: center; padding: 60px 20px; color: #445; }
+  .empty-state .big { font-size: 3em; margin-bottom: 16px; }
+  /* Timeline */
+  .timeline { list-style: none; padding: 0; position: relative; }
+  .timeline::before { content:''; position:absolute; left:18px; top:0; bottom:0; width:2px; background:var(--border); }
+  .tl-item { display:flex; gap:16px; padding:0 0 20px 0; position:relative; }
+  .tl-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; margin-top:4px; margin-left:12px; z-index:1; }
+  .tl-dot-ip     { background:var(--text2);  border:2px solid var(--text2); }
+  .tl-dot-domain { background:var(--accent); border:2px solid var(--accent); }
+  .tl-dot-email  { background:var(--warn);   border:2px solid var(--warn); }
+  .tl-body { flex:1; background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:10px 14px; }
+  .tl-meta { font-size:.78em; color:var(--text2); margin-bottom:4px; }
+  .tl-query { font-size:.95em; color:var(--text); word-break:break-all; }
+  .view-toggle { display:flex; gap:8px; }
+  .view-btn { padding:5px 14px; border-radius:4px; font-size:.85em; border:1px solid var(--border); color:var(--text2); background:transparent; cursor:pointer; transition:all .2s; }
+  .view-btn.active,.view-btn:hover { background:var(--accent); color:#0a0f1e; border-color:var(--accent); }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>&#x1F4CB; Historial de Consultas</h1>
+
+<!-- Filtros + vista toggle -->
+<div class="filter-bar">
+  <a href="?tipo=&page=1" {% if not tipo_activo %}class="active"{% endif %}>Todos</a>
+  <a href="?tipo=ip&page=1" {% if tipo_activo == 'ip' %}class="active"{% endif %}>IP</a>
+  <a href="?tipo=domain&page=1" {% if tipo_activo == 'domain' %}class="active"{% endif %}>Dominio</a>
+  <a href="?tipo=email&page=1" {% if tipo_activo == 'email' %}class="active"{% endif %}>Email</a>
+  <span class="count">{{ total }} consulta{{ total|pluralize:"s" }}</span>
+  <a href="{% url 'export_historial' %}" class="btn-export" style="text-decoration:none;">&#x2B07; CSV</a>
+  <div class="view-toggle" style="margin-left:auto;">
+    <button class="view-btn" id="btnTable" onclick="setView('table')">&#x22A0; Tabla</button>
+    <button class="view-btn" id="btnTL"    onclick="setView('timeline')">&#x29BF; Timeline</button>
+  </div>
+</div>
+
+{% if page_obj %}
+
+<!-- Vista Tabla -->
+<div id="viewTable" class="card" style="padding:0;overflow:hidden;">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Tipo</th><th>Consulta</th><th>Fecha</th><th>Estado</th><th>Detalle</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for rec in page_obj %}
+      <tr>
+        <td style="color:#445;">{{ rec.id }}</td>
+        <td>
+          {% if rec.query_type == 'ip' %}<span class="badge badge-ip">IP</span>
+          {% elif rec.query_type == 'domain' %}<span class="badge badge-domain">Dominio</span>
+          {% else %}<span class="badge badge-email">Email</span>{% endif %}
+        </td>
+        <td>{{ rec.query }}</td>
+        <td style="color:#88aaff;white-space:nowrap;">{{ rec.created_at|date:"d/m/Y H:i" }}</td>
+        <td>
+          {% if rec.success %}<span class="badge badge-ok">&#x2714; OK</span>
+          {% else %}<span class="badge badge-err">&#x2716; Error</span>{% endif %}
+        </td>
+        <td>
+          {% if rec.success %}
+            {% if rec.query_type == 'ip' %}<a class="query-link" href="{% url 'buscar_ip' %}">&#x2192; Buscar de nuevo</a>
+            {% elif rec.query_type == 'domain' %}<a class="query-link" href="{% url 'buscar_dominio' %}">&#x2192; Buscar de nuevo</a>
+            {% elif rec.query_type == 'email' %}<a class="query-link" href="{% url 'buscar_email' %}">&#x2192; Buscar de nuevo</a>
+            {% endif %}
+          {% else %}<span style="color:#445;">—</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Vista Timeline -->
+<div id="viewTL" style="display:none;">
+  <ul class="timeline">
+    {% for rec in page_obj %}
+    <li class="tl-item">
+      <span class="tl-dot tl-dot-{{ rec.query_type }}"></span>
+      <div class="tl-body">
+        <div class="tl-meta">
+          {% if rec.query_type == 'ip' %}<span class="badge badge-ip">IP</span>
+          {% elif rec.query_type == 'domain' %}<span class="badge badge-domain">Dominio</span>
+          {% else %}<span class="badge badge-email">Email</span>{% endif %}
+          &nbsp;{{ rec.created_at|date:"d/m/Y H:i:s" }}
+          {% if not rec.success %}&nbsp;<span class="badge badge-err">Error</span>{% endif %}
+        </div>
+        <div class="tl-query">{{ rec.query }}</div>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+
+<!-- Paginación -->
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+  {% if page_obj.has_previous %}
+    <a href="?tipo={{ tipo_activo }}&page=1">&laquo;&laquo;</a>
+    <a href="?tipo={{ tipo_activo }}&page={{ page_obj.previous_page_number }}">&laquo; Ant</a>
+  {% else %}
+    <span class="disabled">&laquo;&laquo;</span>
+    <span class="disabled">&laquo; Ant</span>
+  {% endif %}
+
+  {% for num in page_obj.paginator.page_range %}
+    {% if page_obj.number == num %}
+      <span class="current">{{ num }}</span>
+    {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+      <a href="?tipo={{ tipo_activo }}&page={{ num }}">{{ num }}</a>
+    {% endif %}
+  {% endfor %}
+
+  {% if page_obj.has_next %}
+    <a href="?tipo={{ tipo_activo }}&page={{ page_obj.next_page_number }}">Sig &raquo;</a>
+    <a href="?tipo={{ tipo_activo }}&page={{ page_obj.paginator.num_pages }}">&raquo;&raquo;</a>
+  {% else %}
+    <span class="disabled">Sig &raquo;</span>
+    <span class="disabled">&raquo;&raquo;</span>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card empty-state">
+  <div class="big">&#x1F4CB;</div>
+  <p>No hay consultas registradas aún.</p>
+  <p style="margin-top:8px;font-size:.9em;">
+    Empieza buscando una <a href="{% url 'buscar_ip' %}" style="color:var(--accent);">IP</a>,
+    <a href="{% url 'buscar_dominio' %}" style="color:var(--accent);">dominio</a> o
+    <a href="{% url 'buscar_email' %}" style="color:var(--accent);">email</a>.
+  </p>
+</div>
+{% endif %}
+
+<script>
+const _VK = 'osint_hist_view';
+function setView(v) {
+  localStorage.setItem(_VK, v);
+  document.getElementById('viewTable').style.display = v === 'table' ? '' : 'none';
+  document.getElementById('viewTL').style.display    = v === 'timeline' ? '' : 'none';
+  document.getElementById('btnTable').classList.toggle('active', v === 'table');
+  document.getElementById('btnTL').classList.toggle('active',    v === 'timeline');
+}
+setView(localStorage.getItem(_VK) || 'table');
+</script>
+
+{% endblock %}

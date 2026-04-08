@@ -1,0 +1,64 @@
+{% extends "myapp/base.html" %}
+{% block title %}Registro — OSINTng{% endblock %}
+
+{% block extra_head %}
+<style>
+  .auth-wrap { max-width: 420px; margin: 60px auto; }
+  .auth-brand { text-align: center; margin-bottom: 32px; }
+  .auth-brand .logo { font-size: 2em; color: #00ff88; font-weight: bold; letter-spacing: 4px; }
+  .auth-brand p { color: #88aaff; font-size: 0.9em; margin-top: 6px; }
+  .field-error { color: #ff6666; font-size: 0.82em; margin-top: 4px; }
+  .auth-footer { text-align: center; margin-top: 20px; color: #445; font-size: 0.88em; }
+  .auth-footer a { color: #88aaff; text-decoration: none; }
+  .auth-footer a:hover { color: #00ff88; }
+  .password-hint { color: #445; font-size: 0.78em; margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-brand">
+    <div class="logo">[ OSINT ]</div>
+    <p>Crea tu cuenta para acceder a la plataforma</p>
+  </div>
+
+  <div class="card">
+    <h2>Crear Cuenta</h2>
+
+    {% if errors %}
+      {% for err in errors %}
+        <div class="alert alert-danger">&#x26A0; {{ err }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="username">Usuario</label>
+        <input type="text" id="username" name="username"
+               value="{{ form_data.username }}" autocomplete="username" autofocus
+               maxlength="150">
+      </div>
+      <div class="form-group">
+        <label for="email">Email (opcional)</label>
+        <input type="text" id="email" name="email"
+               value="{{ form_data.email }}" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="password1">Contraseña</label>
+        <input type="password" id="password1" name="password1" autocomplete="new-password">
+        <p class="password-hint">Mínimo 8 caracteres. No puede ser solo números.</p>
+      </div>
+      <div class="form-group">
+        <label for="password2">Repetir contraseña</label>
+        <input type="password" id="password2" name="password2" autocomplete="new-password">
+      </div>
+      <button type="submit" style="width:100%;">Crear cuenta</button>
+    </form>
+  </div>
+
+  <div class="auth-footer">
+    ¿Ya tienes cuenta? <a href="/login/">Inicia sesión</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,160 @@
+{% extends "myapp/base.html" %}
+{% block title %}Comparar Dominios — OSINTng{% endblock %}
+
+{% block extra_head %}
+<style>
+  .compare-form { display: flex; gap: 12px; flex-wrap: wrap; }
+  .compare-form .form-group { flex: 1; min-width: 200px; }
+  .col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 680px) { .col-grid { grid-template-columns: 1fr; } }
+  .col-header { text-align: center; padding: 14px; border-radius: 6px; margin-bottom: 12px; }
+  .col-a { background: var(--ok-bg); border: 1px solid var(--accent); }
+  .col-b { background: var(--info-bg); border: 1px solid var(--text2); }
+  .col-a h2 { color: var(--accent); }
+  .col-b h2 { color: var(--text2); }
+  .data-row { display: flex; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: .88em; }
+  .data-row:last-child { border-bottom: none; }
+  .data-label { color: var(--text2); min-width: 120px; flex-shrink: 0; }
+  .data-value { color: var(--text); word-break: break-all; }
+  .dns-list { list-style: none; padding: 0; }
+  .dns-list li { background: var(--bg2); border: 1px solid var(--border); border-radius: 3px; padding: 4px 8px; margin-bottom: 4px; font-size: .84em; }
+  .dns-empty { color: #445; font-size: .84em; font-style: italic; }
+  .sec-title { color: var(--accent); font-size: .76em; text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; }
+  .diff-hi { background: var(--warn-bg); border-radius: 2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>&#x2194; Comparar Dominios</h1>
+
+<div class="card">
+  <form method="get">
+    <div class="compare-form">
+      <div class="form-group">
+        <label for="d1">Dominio A</label>
+        <input type="text" id="d1" name="d1" value="{{ q1 }}" placeholder="Ej: example.com" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="d2">Dominio B</label>
+        <input type="text" id="d2" name="d2" value="{{ q2 }}" placeholder="Ej: other.com" autocomplete="off">
+      </div>
+    </div>
+    <button type="submit" style="margin-top:8px;">Comparar</button>
+  </form>
+</div>
+
+{% if error1 %}<div class="alert alert-danger">&#x26A0; Dominio A: {{ error1 }}</div>{% endif %}
+{% if error2 %}<div class="alert alert-danger">&#x26A0; Dominio B: {{ error2 }}</div>{% endif %}
+
+{% if result1 or result2 %}
+
+<div class="export-bar">
+  <button class="btn-export" onclick="doExportCmp()">&#x2B07; Exportar JSON</button>
+  <button class="btn-export" onclick="window.print()">&#x1F5A8; Exportar PDF</button>
+</div>
+
+<div class="col-grid">
+
+  <!-- Columna A -->
+  <div>
+    {% if result1 %}
+    <div class="col-header col-a"><h2>{{ result1.domain }}</h2></div>
+
+    <div class="card">
+      <p class="sec-title">WHOIS</p>
+      <div class="data-row"><span class="data-label">Registrar</span><span class="data-value">{{ result1.registrar|default:"—" }}</span></div>
+      <div class="data-row"><span class="data-label">Creación</span><span class="data-value">{{ result1.creation_date|default:"—" }}</span></div>
+      <div class="data-row"><span class="data-label">Expiración</span><span class="data-value">{{ result1.expiration_date|default:"—" }}</span></div>
+
+      <p class="sec-title">A — IPv4</p>
+      {% with result1.get_list "dns_a" as lst %}
+        {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
+        {% else %}<span class="dns-empty">Sin registros A.</span>{% endif %}
+      {% endwith %}
+
+      <p class="sec-title">NS — Name Servers</p>
+      {% with result1.get_list "dns_ns" as lst %}
+        {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
+        {% else %}<span class="dns-empty">Sin NS.</span>{% endif %}
+      {% endwith %}
+
+      <p class="sec-title">MX — Mail</p>
+      {% with result1.get_list "dns_mx" as lst %}
+        {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
+        {% else %}<span class="dns-empty">Sin MX.</span>{% endif %}
+      {% endwith %}
+
+      <p class="sec-title">TXT</p>
+      {% with result1.get_list "dns_txt" as lst %}
+        {% if lst %}{% for r in lst %}<pre style="margin-bottom:4px;font-size:.78em;">{{ r }}</pre>{% endfor %}
+        {% else %}<span class="dns-empty">Sin TXT.</span>{% endif %}
+      {% endwith %}
+    </div>
+    {% else %}
+    <div class="col-header col-a"><h2>—</h2></div>
+    <div class="card"><span class="dns-empty">Sin datos para este dominio.</span></div>
+    {% endif %}
+  </div>
+
+  <!-- Columna B -->
+  <div>
+    {% if result2 %}
+    <div class="col-header col-b"><h2>{{ result2.domain }}</h2></div>
+
+    <div class="card">
+      <p class="sec-title">WHOIS</p>
+      <div class="data-row"><span class="data-label">Registrar</span><span class="data-value">{{ result2.registrar|default:"—" }}</span></div>
+      <div class="data-row"><span class="data-label">Creación</span><span class="data-value">{{ result2.creation_date|default:"—" }}</span></div>
+      <div class="data-row"><span class="data-label">Expiración</span><span class="data-value">{{ result2.expiration_date|default:"—" }}</span></div>
+
+      <p class="sec-title">A — IPv4</p>
+      {% with result2.get_list "dns_a" as lst %}
+        {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
+        {% else %}<span class="dns-empty">Sin registros A.</span>{% endif %}
+      {% endwith %}
+
+      <p class="sec-title">NS — Name Servers</p>
+      {% with result2.get_list "dns_ns" as lst %}
+        {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
+        {% else %}<span class="dns-empty">Sin NS.</span>{% endif %}
+      {% endwith %}
+
+      <p class="sec-title">MX — Mail</p>
+      {% with result2.get_list "dns_mx" as lst %}
+        {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
+        {% else %}<span class="dns-empty">Sin MX.</span>{% endif %}
+      {% endwith %}
+
+      <p class="sec-title">TXT</p>
+      {% with result2.get_list "dns_txt" as lst %}
+        {% if lst %}{% for r in lst %}<pre style="margin-bottom:4px;font-size:.78em;">{{ r }}</pre>{% endfor %}
+        {% else %}<span class="dns-empty">Sin TXT.</span>{% endif %}
+      {% endwith %}
+    </div>
+    {% else %}
+    <div class="col-header col-b"><h2>—</h2></div>
+    <div class="card"><span class="dns-empty">Sin datos para este dominio.</span></div>
+    {% endif %}
+  </div>
+
+</div><!-- /col-grid -->
+
+<script>
+function doExportCmp() {
+  const data = {
+    domainA: {{ result1|default:"null"|safe }},
+    domainB: {{ result2|default:"null"|safe }},
+  };
+  exportJSON({ a: "{{ q1 }}", b: "{{ q2 }}" }, "comparacion_{{ q1 }}_vs_{{ q2 }}.json");
+}
+{% if result1 %}window.osintAddRecent && osintAddRecent("domain", "{{ result1.domain }}");{% endif %}
+{% if result2 %}window.osintAddRecent && osintAddRecent("domain", "{{ result2.domain }}");{% endif %}
+</script>
+
+{% elif q1 or q2 %}
+  <!-- Errores ya mostrados arriba -->
+{% else %}
+<div class="alert alert-info">&#x2139; Introduce dos dominios para comparar su WHOIS y registros DNS lado a lado.</div>
+{% endif %}
+
+{% endblock %}
