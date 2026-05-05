@@ -1,29 +1,28 @@
 {% extends "myapp/base.html" %}
-
 {% block title %}403 — Acceso bloqueado{% endblock %}
 
 {% block content %}
-<div class="container" style="display:flex;justify-content:center;align-items:center;min-height:60vh;">
-  <div style="text-align:center;max-width:480px;">
-    <div style="font-size:5rem;margin-bottom:1rem;">🛡️</div>
-    <h1 style="color:#ff4444;font-family:'Courier New',monospace;font-size:2.5rem;margin-bottom:.5rem;">
-      403
-    </h1>
-    <h2 style="color:var(--accent);font-family:'Courier New',monospace;margin-bottom:1.5rem;">
-      Acceso Bloqueado — WAF
-    </h2>
-    <p style="color:#aaa;margin-bottom:.75rem;">
+<div style="display:flex; justify-content:center; align-items:center; min-height:60vh;">
+  <div style="text-align:center; max-width:480px;" class="anim-in">
+    <div style="font-size:4.5rem; margin-bottom:16px; filter:drop-shadow(0 0 32px rgba(248,113,113,0.4));">🛡</div>
+    <div style="font-size:3.5rem; font-weight:800; color:var(--danger); letter-spacing:-0.04em; line-height:1; margin-bottom:8px;">403</div>
+    <h2 style="color:var(--text); margin-bottom:16px; font-size:1.2em;">Acceso bloqueado por WAF</h2>
+    <p style="color:var(--text2); margin-bottom:16px; font-size:0.925em; line-height:1.6;">
       Tu petición ha sido bloqueada por el firewall de aplicaciones web.
     </p>
     {% if reason %}
-    <p style="color:#555;font-size:.85rem;font-family:'Courier New',monospace;
-              background:#111;padding:.5rem 1rem;border-radius:4px;
-              border-left:3px solid #ff4444;display:inline-block;">
+    <div style="background:var(--danger-dim); border:1px solid rgba(248,113,113,0.2);
+                border-left:3px solid var(--danger); border-radius:var(--r-sm);
+                padding:12px 16px; display:inline-block; margin-bottom:20px;
+                font-size:0.845em; color:var(--danger); font-family:'SF Mono','Fira Code',monospace;
+                text-align:left; max-width:100%;">
       Motivo: {{ reason }}
-    </p>
+    </div>
     {% endif %}
-    <div style="margin-top:2rem;">
-      <a href="/" style="color:var(--accent);text-decoration:none;font-size:.9rem;">
+    <div>
+      <a href="/" style="color:var(--accent); text-decoration:none; font-weight:600; font-size:0.9em;
+                         background:var(--accent-dim); border:1px solid rgba(79,158,255,0.25);
+                         border-radius:8px; padding:8px 18px; display:inline-block; transition:all .18s;">
         ← Volver al inicio
       </a>
     </div>

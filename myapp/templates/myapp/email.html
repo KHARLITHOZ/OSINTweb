@@ -3,42 +3,54 @@
 
 {% block extra_head %}
 <style>
-  .data-row { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid #1e3a5f; }
-  .data-row:last-child { border-bottom: none; }
-  .data-label { color: #88aaff; min-width: 170px; font-size: 0.85em; flex-shrink: 0; }
-  .data-value { color: #c8ffbe; word-break: break-all; }
-  .risk-bar { height: 8px; border-radius: 4px; margin-top: 6px; }
-  .risk-bajo  { background: #00ff88; }
-  .risk-medio { background: #ff8800; }
-  .risk-alto  { background: #ff3333; }
-  .risk-label-bajo  { color: #00ff88; }
-  .risk-label-medio { color: #ff8800; }
-  .risk-label-alto  { color: #ff3333; }
+  .search-form { display: flex; gap: 10px; align-items: flex-end; }
+  .search-form .form-group { flex: 1; margin: 0; }
+  .search-form button { flex-shrink: 0; }
+
+  .risk-bar-wrap { margin-top: 16px; }
+  .risk-bar-track {
+    height: 6px; border-radius: 3px; background: var(--bg2); border: 1px solid var(--border); overflow: hidden;
+  }
+  .risk-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .risk-bar-bajo   { background: var(--success); }
+  .risk-bar-medio  { background: var(--warn); }
+  .risk-bar-alto   { background: var(--danger); }
+
+  .risk-num-bajo  { color: var(--success); }
+  .risk-num-medio { color: var(--warn); }
+  .risk-num-alto  { color: var(--danger); }
+
   .flag-item {
-    background: #2a0000; border: 1px solid #ff3333; color: #ff6666;
-    border-radius: 4px; padding: 6px 12px; margin-bottom: 6px; font-size: 0.88em;
+    display: flex; align-items: flex-start; gap: 8px;
+    background: var(--danger-dim); border: 1px solid rgba(248,113,113,0.2);
+    border-radius: var(--r-sm); padding: 10px 14px; margin-bottom: 8px;
+    font-size: 0.875em; color: var(--danger);
   }
   .mx-item {
-    background: #060c1a; border: 1px solid #1e3a5f; border-radius: 4px;
-    padding: 6px 10px; margin-bottom: 6px; font-size: 0.88em;
+    background: var(--glass); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 12px; margin-bottom: 6px; font-size: 0.875em; color: var(--text);
   }
-  .check-ok  { color: #00ff88; }
-  .check-no  { color: #ff3333; }
-  .check-warn { color: #ff8800; }
-  .section-title { color: #00ff88; font-size: 0.8em; text-transform: uppercase;
-                   letter-spacing: 1px; margin-bottom: 10px; }
+  .breach-card {
+    background: rgba(248,113,113,0.04); border: 1px solid rgba(248,113,113,0.18);
+    border-radius: var(--r); padding: 16px; margin-bottom: 10px;
+  }
+  .breach-header { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .breach-name { color: var(--danger); font-weight: 700; font-size: 0.95em; }
+  .breach-date { color: var(--text2); font-size: 0.82em; }
+  .breach-domain { color: var(--accent); font-size: 0.845em; margin-bottom: 6px; }
+  .breach-meta { color: var(--text2); font-size: 0.8em; }
 </style>
 {% endblock %}
 
 {% block content %}
-<h1>&#x2709; Análisis de Email</h1>
+<h1>Análisis de Email</h1>
 
-<!-- Formulario -->
+<!-- Search form -->
 <div class="card">
-  <form method="post">
+  <form method="post" class="search-form">
     {% csrf_token %}
     <div class="form-group">
-      <label for="email">Introduce un correo electrónico</label>
+      <label for="email">Correo electrónico</label>
       <input type="text" id="email" name="email" value="{{ query }}"
              placeholder="Ej: usuario@ejemplo.com" autocomplete="off" autofocus>
     </div>
@@ -46,184 +58,156 @@
   </form>
 </div>
 
-<!-- Error -->
 {% if error %}
-<div class="alert alert-danger">&#x26A0; {{ error }}</div>
+<div class="alert alert-danger">⚠ {{ error }}</div>
 {% endif %}
 
 {% if result and analysis %}
 
 <!-- Export + AI -->
 <div class="export-bar">
-  <button class="btn-export" onclick="doExportEmail()">&#x2B07; Exportar JSON</button>
-  <button class="btn-export" onclick="window.print()">&#x1F5A8; Exportar PDF</button>
-  <button class="ai-btn" id="aiBtnEmail" onclick="doAIEmail()">&#x1F916; Analizar con IA</button>
+  <button class="btn-export" onclick="doExportEmail()">↓ Exportar JSON</button>
+  <button class="btn-export" onclick="window.print()">🖨 PDF</button>
+  <button class="ai-btn" id="aiBtnEmail" onclick="doAIEmail()">✦ Analizar con IA</button>
 </div>
 <div id="aiResultEmail"></div>
 
-<!-- Cabecera -->
+<!-- Header card -->
 <div class="card">
   <h2>{{ result.email }}</h2>
-  <div class="grid-3" style="margin-top:12px;">
+  <div class="grid-3" style="margin-top: 12px;">
     <div class="stat-card">
-      <div class="num risk-label-{{ analysis.risk_level }}">
-        {{ analysis.risk_level|upper }}
-      </div>
+      <div class="num risk-num-{{ analysis.risk_level }}">{{ analysis.risk_level|upper }}</div>
       <div class="lbl">Nivel de Riesgo</div>
     </div>
     <div class="stat-card">
       {% if analysis.mx_valid %}
-        <div class="num check-ok">&#x2714;</div>
+        <div class="num" style="color:var(--success);">✔</div>
         <div class="lbl">MX Válido</div>
       {% else %}
-        <div class="num check-no">&#x2716;</div>
+        <div class="num" style="color:var(--danger);">✖</div>
         <div class="lbl">Sin MX</div>
       {% endif %}
     </div>
     <div class="stat-card">
       {% if analysis.is_disposable %}
-        <div class="num check-warn">&#x26A0;</div>
+        <div class="num" style="color:var(--warn);">⚠</div>
         <div class="lbl">Desechable</div>
       {% else %}
-        <div class="num check-ok">&#x2714;</div>
+        <div class="num" style="color:var(--success);">✔</div>
         <div class="lbl">No Desechable</div>
       {% endif %}
     </div>
   </div>
-  <div class="risk-bar risk-{{ analysis.risk_level }}" style="margin-top:16px;
-    width: {% if analysis.risk_level == 'bajo' %}30{% elif analysis.risk_level == 'medio' %}65{% else %}100{% endif %}%;">
+  <div class="risk-bar-wrap">
+    <div class="risk-bar-track">
+      <div class="risk-bar-fill risk-bar-{{ analysis.risk_level }}"
+           style="width: {% if analysis.risk_level == 'bajo' %}28{% elif analysis.risk_level == 'medio' %}64{% else %}100{% endif %}%;">
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Flags de riesgo -->
+<!-- Risk flags -->
 {% if analysis.risk_flags %}
 <div class="card">
-  <h2>&#x26A0; Indicadores de Riesgo</h2>
+  <h2>⚠ Indicadores de Riesgo</h2>
   {% for flag in analysis.risk_flags %}
-    <div class="flag-item">&#x2022; {{ flag }}</div>
+    <div class="flag-item">• {{ flag }}</div>
   {% endfor %}
 </div>
 {% else %}
-<div class="alert alert-ok">&#x2714; No se detectaron indicadores de riesgo.</div>
+<div class="alert alert-ok">✔ No se detectaron indicadores de riesgo.</div>
 {% endif %}
 
 <div class="grid-2">
-
-  <!-- Información del email -->
+  <!-- Email info -->
   <div class="card">
     <h2>Información del Email</h2>
-    <div class="data-row">
-      <span class="data-label">Email</span>
-      <span class="data-value">{{ analysis.email }}</span>
-    </div>
-    <div class="data-row">
-      <span class="data-label">Usuario</span>
-      <span class="data-value">{{ analysis.username }}</span>
-    </div>
-    <div class="data-row">
-      <span class="data-label">Dominio</span>
-      <span class="data-value">{{ analysis.domain }}</span>
-    </div>
+    <div class="data-row"><span class="data-label">Email</span><span class="data-value">{{ analysis.email }}</span></div>
+    <div class="data-row"><span class="data-label">Usuario</span><span class="data-value">{{ analysis.username }}</span></div>
+    <div class="data-row"><span class="data-label">Dominio</span><span class="data-value">{{ analysis.domain }}</span></div>
     <div class="data-row">
       <span class="data-label">Dominio existe</span>
       <span class="data-value">
-        {% if analysis.domain_exists %}
-          <span class="tag">&#x2714; Sí</span>
-        {% else %}
-          <span class="tag tag-red">&#x2716; No</span>
-        {% endif %}
+        {% if analysis.domain_exists %}<span class="tag">✔ Sí</span>{% else %}<span class="tag tag-red">✖ No</span>{% endif %}
       </span>
     </div>
     <div class="data-row">
-      <span class="data-label">Email desechable</span>
+      <span class="data-label">Desechable</span>
       <span class="data-value">
-        {% if analysis.is_disposable %}
-          <span class="tag tag-red">&#x26A0; Sí</span>
-        {% else %}
-          <span class="tag">&#x2714; No</span>
-        {% endif %}
+        {% if analysis.is_disposable %}<span class="tag tag-red">⚠ Sí</span>{% else %}<span class="tag">✔ No</span>{% endif %}
       </span>
     </div>
   </div>
 
-  <!-- Análisis del username -->
+  <!-- Username analysis -->
   <div class="card">
     <h2>Análisis del Username</h2>
-    <div class="data-row">
-      <span class="data-label">Longitud</span>
-      <span class="data-value">{{ analysis.username_analysis.length }} caracteres</span>
-    </div>
-    <div class="data-row">
-      <span class="data-label">Ratio números</span>
-      <span class="data-value">{{ analysis.username_analysis.digit_ratio }}</span>
-    </div>
+    <div class="data-row"><span class="data-label">Longitud</span><span class="data-value">{{ analysis.username_analysis.length }} caracteres</span></div>
+    <div class="data-row"><span class="data-label">Ratio números</span><span class="data-value">{{ analysis.username_analysis.digit_ratio }}</span></div>
     <div class="data-row">
       <span class="data-label">Patrones</span>
       <span class="data-value">
         {% if analysis.username_analysis.flags %}
-          {% for f in analysis.username_analysis.flags %}
-            <span class="tag tag-red">{{ f }}</span>
-          {% endfor %}
+          {% for f in analysis.username_analysis.flags %}<span class="tag tag-red">{{ f }}</span> {% endfor %}
         {% else %}
           <span class="tag">Sin patrones sospechosos</span>
         {% endif %}
       </span>
     </div>
   </div>
-
 </div>
 
-<!-- Registros MX -->
+<!-- MX records -->
 <div class="card">
   <h2>Registros MX (Servidores de Correo)</h2>
   {% if analysis.mx_records %}
-    <p class="section-title" style="margin-bottom:12px;">
-      &#x2714; El dominio acepta correo electrónico
-    </p>
+    <p class="section-title" style="margin-bottom: 12px;">✔ El dominio acepta correo electrónico</p>
     {% for mx in analysis.mx_records %}
       <div class="mx-item">{{ mx }}</div>
     {% endfor %}
   {% else %}
-    <div class="alert alert-warn">&#x26A0; No se encontraron registros MX. El dominio no parece aceptar correo.</div>
+    <div class="alert alert-warn">⚠ No se encontraron registros MX. El dominio no parece aceptar correo.</div>
   {% endif %}
 </div>
 
-<!-- Brechas HIBP -->
+<!-- HIBP breaches -->
 {% if analysis.hibp_checked %}
   {% if analysis.hibp_breaches %}
   <div class="card">
-    <h2>&#x1F525; Brechas de Datos (HIBP) — {{ analysis.breach_count }} filtración{{ analysis.breach_count|pluralize:"es" }}</h2>
+    <h2>🔥 Brechas de Datos (HIBP) — {{ analysis.breach_count }} filtración{{ analysis.breach_count|pluralize:"es" }}</h2>
     {% for b in analysis.hibp_breaches %}
-    <div style="background:#1a0000; border:1px solid #ff3333; border-radius:5px; padding:12px; margin-bottom:10px;">
-      <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
-        <span style="color:#ff6666; font-weight:bold;">{{ b.name }}</span>
-        <span style="color:#445; font-size:.85em;">{{ b.breach_date }}</span>
+    <div class="breach-card">
+      <div class="breach-header">
+        <span class="breach-name">{{ b.name }}</span>
+        <span class="breach-date">{{ b.breach_date }}</span>
       </div>
-      {% if b.domain %}<div style="color:#88aaff; font-size:.85em; margin-bottom:6px;">{{ b.domain }}</div>{% endif %}
-      <div style="color:#888; font-size:.8em;">
+      {% if b.domain %}<div class="breach-domain">{{ b.domain }}</div>{% endif %}
+      <div class="breach-meta">
         Afectados: {{ b.pwn_count|default:"—" }}
-        &nbsp;|&nbsp;
-        Datos: {% for dc in b.data_classes %}<span class="tag tag-red" style="font-size:.75em;">{{ dc }}</span>{% endfor %}
+        &nbsp;&middot;&nbsp;
+        Datos: {% for dc in b.data_classes %}<span class="tag tag-red" style="font-size:.72em;">{{ dc }}</span> {% endfor %}
       </div>
     </div>
     {% endfor %}
   </div>
   {% else %}
-  <div class="alert alert-ok">&#x2714; No encontrado en ninguna brecha de datos conocida (HIBP).</div>
+  <div class="alert alert-ok">✔ No encontrado en ninguna brecha de datos conocida (HIBP).</div>
   {% endif %}
 {% else %}
 <div class="alert alert-info">
-  &#x2139; Configura <code>HIBP_API_KEY</code> en tu <code>.env</code> para verificar brechas reales via Have I Been Pwned.
+  ℹ Configura <code>HIBP_API_KEY</code> en tu <code>.env</code> para verificar brechas reales via Have I Been Pwned.
 </div>
 {% endif %}
 
-<!-- Consulta guardada -->
+<!-- Saved record -->
 {% with result.record as rec %}
 <div class="card">
   <h2>Consulta guardada</h2>
   <div class="data-row"><span class="data-label">ID registro</span><span class="data-value">#{{ rec.id }}</span></div>
   <div class="data-row"><span class="data-label">Fecha</span><span class="data-value">{{ rec.created_at|date:"d/m/Y H:i:s" }}</span></div>
-  <div class="data-row"><span class="data-label">Éxito</span><span class="data-value"><span class="tag">&#x2714; Sí</span></span></div>
+  <div class="data-row"><span class="data-label">Estado</span><span class="data-value"><span class="tag">✔ Éxito</span></span></div>
 </div>
 {% endwith %}
 

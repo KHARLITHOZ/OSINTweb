@@ -7,9 +7,9 @@
 import os
 
 # === SEGURIDAD ===
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'fallback-insecure-key-change-me')
-DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-insecure-key-change-me')
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # === BASE DE DATOS (PostgreSQL via Docker) ===
 DATABASES = {

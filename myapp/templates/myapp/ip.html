@@ -5,30 +5,33 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-  #map { height: 260px; border-radius: 6px; border: 1px solid #1e3a5f; }
-  .risk-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 6px 14px; border-radius: 4px; font-size: 0.9em; font-weight: bold;
+  .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+  .page-header h1 { margin-bottom: 0; }
+  #map {
+    height: 260px; border-radius: var(--r); border: 1px solid var(--border);
+    overflow: hidden; margin-top: 16px;
   }
-  .risk-ok   { background: #002a10; border: 1px solid #00ff88; color: #00ff88; }
-  .risk-warn { background: #2a1a00; border: 1px solid #ff8800; color: #ffaa44; }
-  .risk-bad  { background: #2a0000; border: 1px solid #ff3333; color: #ff6666; }
-  .data-row { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid #1e3a5f; }
-  .data-row:last-child { border-bottom: none; }
-  .data-label { color: #88aaff; min-width: 130px; font-size: 0.85em; flex-shrink: 0; }
-  .data-value { color: #c8ffbe; word-break: break-all; }
+  .ip-headline {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 6px;
+  }
+  .ip-headline h2 { font-size: 1.4em; font-weight: 700; margin-bottom: 0; color: var(--text); }
+  .ip-location { color: var(--text2); font-size: 0.9em; margin-bottom: 16px; }
+  .risk-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .search-form { display: flex; gap: 10px; align-items: flex-end; }
+  .search-form .form-group { flex: 1; margin: 0; }
+  .search-form button { flex-shrink: 0; }
 </style>
 {% endblock %}
 
 {% block content %}
-<h1>&#x1F50D; Búsqueda de IP</h1>
+<h1>IP Lookup</h1>
 
-<!-- Formulario de búsqueda -->
+<!-- Search form -->
 <div class="card">
-  <form method="post">
+  <form method="post" class="search-form">
     {% csrf_token %}
     <div class="form-group">
-      <label for="ip">Introduce tu dirección IP</label>
+      <label for="ip">Dirección IP</label>
       <input type="text" id="ip" name="ip" value="{{ query }}"
              placeholder="Ej: 8.8.8.8" autocomplete="off" autofocus>
     </div>
@@ -36,70 +39,64 @@
   </form>
 </div>
 
-<!-- Error -->
 {% if error %}
-<div class="alert alert-danger">&#x26A0; {{ error }}</div>
+<div class="alert alert-danger">⚠ {{ error }}</div>
 {% endif %}
 
-<!-- Resultados -->
 {% if result %}
 
 <!-- Export + AI -->
 <div class="export-bar">
-  <button class="btn-export" onclick="doExportIP()">&#x2B07; Exportar JSON</button>
-  <button class="btn-export" onclick="window.print()">&#x1F5A8; Exportar PDF</button>
-  <button class="ai-btn" id="aiBtnIP" onclick="doAIIP()">&#x1F916; Analizar con IA</button>
+  <button class="btn-export" onclick="doExportIP()">↓ Exportar JSON</button>
+  <button class="btn-export" onclick="window.print()">🖨 PDF</button>
+  <button class="ai-btn" id="aiBtnIP" onclick="doAIIP()">✦ Analizar con IA</button>
 </div>
 <div id="aiResultIP"></div>
 
-<!-- Cabecera con IP y ubicación -->
+<!-- Header card -->
 <div class="card">
-  <h2>{{ result.ip }}
+  <div class="ip-headline">
+    <h2>{{ result.ip }}</h2>
     {% if result.country_code %}
-      &nbsp;<span class="tag">{{ result.country_code }}</span>
+      <span class="tag">{{ result.country_code }}</span>
     {% endif %}
-  </h2>
-  <p style="color:#88aaff; margin-bottom:16px;">
-    {{ result.city }}{% if result.city and result.region %}, {% endif %}{{ result.region }}{% if result.country %} — {{ result.country }}{% endif %}
+  </div>
+  <p class="ip-location">
+    {{ result.city }}{% if result.city and result.region %}, {% endif %}{{ result.region }}{% if result.country %} &mdash; {{ result.country }}{% endif %}
   </p>
 
-  <!-- Indicadores de riesgo -->
-  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;">
+  <div class="risk-badges">
     {% if result.is_proxy %}
-      <span class="risk-badge risk-bad">&#x26D4; Proxy / VPN detectado</span>
+      <span class="risk-badge risk-bad">⊘ Proxy / VPN detectado</span>
     {% else %}
-      <span class="risk-badge risk-ok">&#x2714; Sin Proxy / VPN</span>
+      <span class="risk-badge risk-ok">✔ Sin Proxy / VPN</span>
     {% endif %}
-
     {% if result.is_hosting %}
-      <span class="risk-badge risk-warn">&#x1F3E0; Hosting / Datacenter</span>
+      <span class="risk-badge risk-warn">🏠 Hosting / Datacenter</span>
     {% else %}
-      <span class="risk-badge risk-ok">&#x2714; No es Hosting</span>
+      <span class="risk-badge risk-ok">✔ No es Hosting</span>
     {% endif %}
   </div>
 
-  <!-- Mapa -->
   {% if result.latitude and result.longitude %}
   <div id="map"></div>
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      var lat = {{ result.latitude }};
-      var lon = {{ result.longitude }};
-      var map = L.map("map", { zoomControl: true }).setView([lat, lon], 8);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    document.addEventListener("DOMContentLoaded", function() {
+      var lat={{ result.latitude }}, lon={{ result.longitude }};
+      var map=L.map("map",{zoomControl:true}).setView([lat,lon],8);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+        attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       }).addTo(map);
-      L.circleMarker([lat, lon], {
-        radius: 10, color: "#00ff88", fillColor: "#00ff88", fillOpacity: 0.5, weight: 2
+      L.circleMarker([lat,lon],{
+        radius:10, color:"#4f9eff", fillColor:"#4f9eff", fillOpacity:0.45, weight:2
       }).addTo(map).bindPopup("<b>{{ result.ip }}</b><br>{{ result.city }}, {{ result.country }}").openPopup();
     });
   </script>
   {% endif %}
 </div>
 
-<!-- Datos de red y geolocalización -->
+<!-- Data grid -->
 <div class="grid-2">
-
   <div class="card">
     <h2>Geolocalización</h2>
     <div class="data-row"><span class="data-label">País</span><span class="data-value">{{ result.country }} ({{ result.country_code }})</span></div>
@@ -115,37 +112,40 @@
     <div class="data-row"><span class="data-label">ISP</span><span class="data-value">{{ result.isp|default:"—" }}</span></div>
     <div class="data-row"><span class="data-label">Organización</span><span class="data-value">{{ result.org|default:"—" }}</span></div>
     <div class="data-row"><span class="data-label">ASN</span><span class="data-value">{{ result.asn|default:"—" }}</span></div>
-    <div class="data-row"><span class="data-label">Proxy / VPN</span>
+    <div class="data-row">
+      <span class="data-label">Proxy / VPN</span>
       <span class="data-value">
         {% if result.is_proxy %}<span class="tag tag-red">Sí</span>{% else %}<span class="tag">No</span>{% endif %}
       </span>
     </div>
-    <div class="data-row"><span class="data-label">Hosting</span>
+    <div class="data-row">
+      <span class="data-label">Hosting</span>
       <span class="data-value">
-        {% if result.is_hosting %}<span class="tag tag-red">Sí</span>{% else %}<span class="tag">No</span>{% endif %}
+        {% if result.is_hosting %}<span class="tag tag-warn">Sí</span>{% else %}<span class="tag">No</span>{% endif %}
       </span>
     </div>
-    <div class="data-row"><span class="data-label">Reverse DNS</span>
+    <div class="data-row">
+      <span class="data-label">Reverse DNS</span>
       <span class="data-value">
         {% if result.reverse_dns %}
           {{ result.reverse_dns }}
-          &nbsp;<a href="{% url 'buscar_dominio' %}?autoload={{ result.reverse_dns }}" style="font-size:.8em; color:var(--text2);" title="Buscar este dominio">&#x2192; ver dominio</a>
+          &nbsp;<a href="{% url 'buscar_dominio' %}?autoload={{ result.reverse_dns }}"
+                   style="font-size:.82em; color:var(--accent); text-decoration:none;" title="Ver dominio">→</a>
         {% else %}
-          <span style="color:#445;">Sin PTR</span>
+          <span style="color:var(--text3);">Sin PTR</span>
         {% endif %}
       </span>
     </div>
   </div>
-
 </div>
 
-<!-- Búsquedas recientes de la misma IP -->
+<!-- Saved record -->
 {% with result.record as rec %}
 <div class="card">
   <h2>Consulta guardada</h2>
   <div class="data-row"><span class="data-label">ID registro</span><span class="data-value">#{{ rec.id }}</span></div>
   <div class="data-row"><span class="data-label">Fecha</span><span class="data-value">{{ rec.created_at|date:"d/m/Y H:i:s" }}</span></div>
-  <div class="data-row"><span class="data-label">Éxito</span><span class="data-value"><span class="tag">&#x2714; Sí</span></span></div>
+  <div class="data-row"><span class="data-label">Estado</span><span class="data-value"><span class="tag">✔ Éxito</span></span></div>
 </div>
 {% endwith %}
 
@@ -156,5 +156,6 @@ function doExportIP() { exportJSON(_ipData, "ip_" + _ipData.ip + ".json"); }
 function doAIIP() { analyzeWithAI("ip", _ipData, document.getElementById("aiBtnIP"), document.getElementById("aiResultIP")); }
 window.osintAddRecent && osintAddRecent("ip", _ipData.ip);
 </script>
+
 {% endif %}
 {% endblock %}

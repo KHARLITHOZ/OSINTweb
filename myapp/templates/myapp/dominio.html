@@ -3,30 +3,26 @@
 
 {% block extra_head %}
 <style>
-  .data-row { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid #1e3a5f; }
-  .data-row:last-child { border-bottom: none; }
-  .data-label { color: #88aaff; min-width: 150px; font-size: 0.85em; flex-shrink: 0; }
-  .data-value { color: #c8ffbe; word-break: break-all; }
-  .dns-list { list-style: none; padding: 0; margin: 0; }
-  .dns-list li {
-    background: #060c1a; border: 1px solid #1e3a5f; border-radius: 4px;
-    padding: 6px 10px; margin-bottom: 6px; font-size: 0.88em; word-break: break-all;
+  .search-form { display: flex; gap: 10px; align-items: flex-end; }
+  .search-form .form-group { flex: 1; margin: 0; }
+  .search-form button { flex-shrink: 0; }
+  .domain-headline {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px;
   }
-  .dns-empty { color: #445; font-size: 0.85em; font-style: italic; }
-  .section-title { color: #00ff88; font-size: 0.8em; text-transform: uppercase;
-                   letter-spacing: 1px; margin-bottom: 10px; }
+  .domain-headline h2 { font-size: 1.35em; font-weight: 700; margin-bottom: 0; }
+  .domain-registrar { color: var(--text2); font-size: 0.88em; margin-bottom: 16px; }
 </style>
 {% endblock %}
 
 {% block content %}
-<h1>&#x1F310; Búsqueda de Dominio</h1>
+<h1>Dominio</h1>
 
-<!-- Formulario -->
+<!-- Search form -->
 <div class="card">
-  <form method="post">
+  <form method="post" class="search-form">
     {% csrf_token %}
     <div class="form-group">
-      <label for="dominio">Introduce un dominio</label>
+      <label for="dominio">Dominio</label>
       <input type="text" id="dominio" name="dominio" value="{{ query }}"
              placeholder="Ej: example.com" autocomplete="off" autofocus>
     </div>
@@ -34,41 +30,39 @@
   </form>
 </div>
 
-<!-- Error -->
 {% if error %}
-<div class="alert alert-danger">&#x26A0; {{ error }}</div>
+<div class="alert alert-danger">⚠ {{ error }}</div>
 {% endif %}
-
 
 {% if result %}
 
 <!-- Export + AI -->
 <div class="export-bar">
-  <button class="btn-export" onclick="doExportDom()">&#x2B07; Exportar JSON</button>
-  <button class="btn-export" onclick="window.print()">&#x1F5A8; Exportar PDF</button>
-  <button class="ai-btn" id="aiBtnDom" onclick="doAIDom()">&#x1F916; Analizar con IA</button>
+  <button class="btn-export" onclick="doExportDom()">↓ Exportar JSON</button>
+  <button class="btn-export" onclick="window.print()">🖨 PDF</button>
+  <button class="ai-btn" id="aiBtnDom" onclick="doAIDom()">✦ Analizar con IA</button>
 </div>
 <div id="aiResultDom"></div>
 
-<!-- Cabecera -->
+<!-- Header card -->
 <div class="card">
-  <h2>{{ result.domain }}</h2>
+  <div class="domain-headline">
+    <h2>{{ result.domain }}</h2>
+  </div>
   {% if result.registrar %}
-    <p style="color:#88aaff; margin-bottom:12px;">Registrar: {{ result.registrar }}</p>
+    <p class="domain-registrar">Registrar: {{ result.registrar }}</p>
   {% endif %}
-  <div class="grid-3" style="margin-top:8px;">
+  <div class="grid-3" style="margin-top: 6px;">
     <div class="stat-card">
-      <div class="num" style="font-size:1em;">{{ result.creation_date|default:"—" }}</div>
+      <div class="num" style="font-size:0.95em; letter-spacing:-0.02em;">{{ result.creation_date|default:"—" }}</div>
       <div class="lbl">Registro</div>
     </div>
     <div class="stat-card">
-      <div class="num" style="font-size:1em;">{{ result.expiration_date|default:"—" }}</div>
+      <div class="num" style="font-size:0.95em; letter-spacing:-0.02em;">{{ result.expiration_date|default:"—" }}</div>
       <div class="lbl">Expiración</div>
     </div>
     <div class="stat-card">
-      <div class="num">
-        {{ result.dns_a_list|length }}
-      </div>
+      <div class="num">{{ result.dns_a_list|length }}</div>
       <div class="lbl">IPs (A)</div>
     </div>
   </div>
@@ -76,49 +70,30 @@
 
 <!-- WHOIS + Name Servers -->
 <div class="grid-2">
-
   <div class="card">
     <h2>WHOIS</h2>
-    <div class="data-row">
-      <span class="data-label">Dominio</span>
-      <span class="data-value">{{ result.domain }}</span>
-    </div>
-    <div class="data-row">
-      <span class="data-label">Registrar</span>
-      <span class="data-value">{{ result.registrar|default:"—" }}</span>
-    </div>
-    <div class="data-row">
-      <span class="data-label">Creación</span>
-      <span class="data-value">{{ result.creation_date|default:"—" }}</span>
-    </div>
-    <div class="data-row">
-      <span class="data-label">Expiración</span>
-      <span class="data-value">{{ result.expiration_date|default:"—" }}</span>
-    </div>
+    <div class="data-row"><span class="data-label">Dominio</span><span class="data-value">{{ result.domain }}</span></div>
+    <div class="data-row"><span class="data-label">Registrar</span><span class="data-value">{{ result.registrar|default:"—" }}</span></div>
+    <div class="data-row"><span class="data-label">Creación</span><span class="data-value">{{ result.creation_date|default:"—" }}</span></div>
+    <div class="data-row"><span class="data-label">Expiración</span><span class="data-value">{{ result.expiration_date|default:"—" }}</span></div>
   </div>
 
   <div class="card">
     <h2>Name Servers</h2>
     {% with result.name_servers_list as ns_list %}
       {% if ns_list %}
-        <ul class="dns-list">
-          {% for ns in ns_list %}<li>{{ ns }}</li>{% endfor %}
-        </ul>
+        <ul class="dns-list">{% for ns in ns_list %}<li>{{ ns }}</li>{% endfor %}</ul>
       {% else %}
         <span class="dns-empty">Sin información de name servers.</span>
       {% endif %}
     {% endwith %}
   </div>
-
 </div>
 
-<!-- Registros DNS -->
+<!-- DNS Records -->
 <div class="card">
   <h2>Registros DNS</h2>
-
-  <div class="grid-2">
-
-    <!-- A -->
+  <div class="grid-2" style="margin-top: 6px;">
     <div>
       <p class="section-title">A &mdash; Direcciones IPv4</p>
       {% with result.dns_a_list as lst %}
@@ -126,8 +101,6 @@
         {% else %}<span class="dns-empty">Sin registros A.</span>{% endif %}
       {% endwith %}
     </div>
-
-    <!-- CNAME -->
     <div>
       <p class="section-title">CNAME &mdash; Alias</p>
       {% with result.dns_cname_list as lst %}
@@ -135,8 +108,6 @@
         {% else %}<span class="dns-empty">Sin registros CNAME.</span>{% endif %}
       {% endwith %}
     </div>
-
-    <!-- NS -->
     <div>
       <p class="section-title">NS &mdash; Name Servers DNS</p>
       {% with result.dns_ns_list as lst %}
@@ -144,8 +115,6 @@
         {% else %}<span class="dns-empty">Sin registros NS.</span>{% endif %}
       {% endwith %}
     </div>
-
-    <!-- MX -->
     <div>
       <p class="section-title">MX &mdash; Mail Exchange</p>
       {% with result.dns_mx_list as lst %}
@@ -153,41 +122,34 @@
         {% else %}<span class="dns-empty">Sin registros MX.</span>{% endif %}
       {% endwith %}
     </div>
-
   </div>
-
-  <!-- TXT (ancho completo) -->
-  <div style="margin-top:20px;">
+  <div style="margin-top: 18px;">
     <p class="section-title">TXT &mdash; Texto (SPF, DKIM, verificaciones...)</p>
     {% with result.dns_txt_list as lst %}
-      {% if lst %}
-        {% for r in lst %}<pre>{{ r }}</pre>{% endfor %}
-      {% else %}
-        <span class="dns-empty">Sin registros TXT.</span>
-      {% endif %}
+      {% if lst %}{% for r in lst %}<pre>{{ r }}</pre>{% endfor %}
+      {% else %}<span class="dns-empty">Sin registros TXT.</span>{% endif %}
     {% endwith %}
   </div>
-
 </div>
 
 <!-- SPF / DMARC -->
 {% if result.spf_record or result.dmarc_record %}
 <div class="card">
-  <h2>&#x2709; Análisis de Email (SPF / DMARC)</h2>
+  <h2>✉ Análisis de Email (SPF / DMARC)</h2>
   {% if result.spf_record %}
-  <div style="margin-bottom:12px;">
+  <div style="margin-bottom: 16px;">
     <p class="section-title">SPF</p>
     <pre>{{ result.spf_record }}</pre>
     {% if "-all" in result.spf_record %}
-      <span class="tag">&#x2714; Política estricta (-all)</span>
+      <span class="tag">✔ Política estricta (-all)</span>
     {% elif "~all" in result.spf_record %}
-      <span class="tag tag-warn">&#x26A0; Política débil (~all)</span>
+      <span class="tag tag-warn">⚠ Política débil (~all)</span>
     {% elif "+all" in result.spf_record %}
-      <span class="tag tag-red">&#x26D4; Peligroso (+all) — acepta cualquier servidor</span>
+      <span class="tag tag-red">⊘ Peligroso (+all) — acepta cualquier servidor</span>
     {% endif %}
   </div>
   {% else %}
-  <div class="alert alert-warn">&#x26A0; Sin registro SPF — spoofing de email posible.</div>
+  <div class="alert alert-warn">⚠ Sin registro SPF — spoofing de email posible.</div>
   {% endif %}
 
   {% if result.dmarc_record %}
@@ -195,41 +157,43 @@
     <p class="section-title">DMARC</p>
     <pre>{{ result.dmarc_record }}</pre>
     {% if "p=reject" in result.dmarc_record %}
-      <span class="tag">&#x2714; Política reject (máxima protección)</span>
+      <span class="tag">✔ Política reject (máxima protección)</span>
     {% elif "p=quarantine" in result.dmarc_record %}
-      <span class="tag tag-warn">&#x26A0; Política quarantine</span>
+      <span class="tag tag-warn">⚠ Política quarantine</span>
     {% elif "p=none" in result.dmarc_record %}
-      <span class="tag tag-red">&#x26A0; Política none — sin enforcement</span>
+      <span class="tag tag-red">⚠ Política none — sin enforcement</span>
     {% endif %}
   </div>
   {% else %}
-  <div class="alert alert-warn">&#x26A0; Sin registro DMARC — phishing fácilmente ejecutable.</div>
+  <div class="alert alert-warn">⚠ Sin registro DMARC — phishing fácilmente ejecutable.</div>
   {% endif %}
 </div>
 {% endif %}
 
-<!-- Subdominios (crt.sh) -->
+<!-- Subdominios -->
 <div class="card">
-  <h2>&#x1F50D; Subdominios (crt.sh Certificate Transparency)</h2>
+  <h2>🔍 Subdominios (crt.sh Certificate Transparency)</h2>
   {% with subs=result.subdomains_list %}
   {% if subs %}
-  <p style="color:#445; font-size:.85em; margin-bottom:12px;">{{ subs|length }} subdominio{{ subs|length|pluralize:"s" }} encontrado{{ subs|length|pluralize:"s" }} en registros de certificados históricos.</p>
-  <ul class="dns-list" style="column-count:2; column-gap:20px;">
+  <p style="color:var(--text2); font-size:.85em; margin-bottom:14px;">
+    {{ subs|length }} subdominio{{ subs|length|pluralize:"s" }} encontrado{{ subs|length|pluralize:"s" }} en registros de certificados históricos.
+  </p>
+  <ul class="dns-list" style="column-count:2; column-gap:16px;">
     {% for sub in subs %}<li>{{ sub }}</li>{% endfor %}
   </ul>
   {% else %}
-  <span class="dns-empty">No se encontraron subdominios en crt.sh (o consulta falló).</span>
+  <span class="dns-empty">No se encontraron subdominios en crt.sh.</span>
   {% endif %}
   {% endwith %}
 </div>
 
-<!-- Consulta guardada -->
+<!-- Saved record -->
 {% with result.record as rec %}
 <div class="card">
   <h2>Consulta guardada</h2>
   <div class="data-row"><span class="data-label">ID registro</span><span class="data-value">#{{ rec.id }}</span></div>
   <div class="data-row"><span class="data-label">Fecha</span><span class="data-value">{{ rec.created_at|date:"d/m/Y H:i:s" }}</span></div>
-  <div class="data-row"><span class="data-label">Éxito</span><span class="data-value"><span class="tag">&#x2714; Sí</span></span></div>
+  <div class="data-row"><span class="data-label">Estado</span><span class="data-value"><span class="tag">✔ Éxito</span></span></div>
 </div>
 {% endwith %}
 

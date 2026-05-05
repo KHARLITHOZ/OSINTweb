@@ -4,28 +4,27 @@
 {% block extra_head %}
 <style>
   .compare-form { display: flex; gap: 12px; flex-wrap: wrap; }
-  .compare-form .form-group { flex: 1; min-width: 200px; }
+  .compare-form .form-group { flex: 1; min-width: 200px; margin: 0; }
   .col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   @media (max-width: 680px) { .col-grid { grid-template-columns: 1fr; } }
-  .col-header { text-align: center; padding: 14px; border-radius: 6px; margin-bottom: 12px; }
-  .col-a { background: var(--ok-bg); border: 1px solid var(--accent); }
-  .col-b { background: var(--info-bg); border: 1px solid var(--text2); }
-  .col-a h2 { color: var(--accent); }
-  .col-b h2 { color: var(--text2); }
-  .data-row { display: flex; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: .88em; }
-  .data-row:last-child { border-bottom: none; }
-  .data-label { color: var(--text2); min-width: 120px; flex-shrink: 0; }
-  .data-value { color: var(--text); word-break: break-all; }
-  .dns-list { list-style: none; padding: 0; }
-  .dns-list li { background: var(--bg2); border: 1px solid var(--border); border-radius: 3px; padding: 4px 8px; margin-bottom: 4px; font-size: .84em; }
-  .dns-empty { color: #445; font-size: .84em; font-style: italic; }
-  .sec-title { color: var(--accent); font-size: .76em; text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; }
-  .diff-hi { background: var(--warn-bg); border-radius: 2px; }
+  .col-header {
+    text-align: center; padding: 14px 18px; border-radius: var(--r);
+    margin-bottom: 12px; font-weight: 700; font-size: 1.1em;
+    letter-spacing: -0.01em;
+  }
+  .col-a {
+    background: rgba(79,158,255,0.07); border: 1px solid rgba(79,158,255,0.22);
+    color: var(--accent);
+  }
+  .col-b {
+    background: rgba(129,140,248,0.07); border: 1px solid rgba(129,140,248,0.22);
+    color: var(--accent2);
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<h1>&#x2194; Comparar Dominios</h1>
+<h1>Comparar Dominios</h1>
 
 <div class="card">
   <form method="get">
@@ -39,105 +38,103 @@
         <input type="text" id="d2" name="d2" value="{{ q2 }}" placeholder="Ej: other.com" autocomplete="off">
       </div>
     </div>
-    <button type="submit" style="margin-top:8px;">Comparar</button>
+    <button type="submit" style="margin-top: 12px;">Comparar</button>
   </form>
 </div>
 
-{% if error1 %}<div class="alert alert-danger">&#x26A0; Dominio A: {{ error1 }}</div>{% endif %}
-{% if error2 %}<div class="alert alert-danger">&#x26A0; Dominio B: {{ error2 }}</div>{% endif %}
+{% if error1 %}<div class="alert alert-danger">⚠ Dominio A: {{ error1 }}</div>{% endif %}
+{% if error2 %}<div class="alert alert-danger">⚠ Dominio B: {{ error2 }}</div>{% endif %}
 
 {% if result1 or result2 %}
 
 <div class="export-bar">
-  <button class="btn-export" onclick="doExportCmp()">&#x2B07; Exportar JSON</button>
-  <button class="btn-export" onclick="window.print()">&#x1F5A8; Exportar PDF</button>
+  <button class="btn-export" onclick="doExportCmp()">↓ Exportar JSON</button>
+  <button class="btn-export" onclick="window.print()">🖨 PDF</button>
 </div>
 
 <div class="col-grid">
 
-  <!-- Columna A -->
+  <!-- Column A -->
   <div>
     {% if result1 %}
-    <div class="col-header col-a"><h2>{{ result1.domain }}</h2></div>
-
+    <div class="col-header col-a">{{ result1.domain }}</div>
     <div class="card">
-      <p class="sec-title">WHOIS</p>
+      <p class="section-title">WHOIS</p>
       <div class="data-row"><span class="data-label">Registrar</span><span class="data-value">{{ result1.registrar|default:"—" }}</span></div>
       <div class="data-row"><span class="data-label">Creación</span><span class="data-value">{{ result1.creation_date|default:"—" }}</span></div>
       <div class="data-row"><span class="data-label">Expiración</span><span class="data-value">{{ result1.expiration_date|default:"—" }}</span></div>
 
-      <p class="sec-title">A — IPv4</p>
+      <p class="section-title" style="margin-top:16px;">A — IPv4</p>
       {% with result1.dns_a_list as lst %}
         {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
         {% else %}<span class="dns-empty">Sin registros A.</span>{% endif %}
       {% endwith %}
 
-      <p class="sec-title">NS — Name Servers</p>
+      <p class="section-title" style="margin-top:14px;">NS — Name Servers</p>
       {% with result1.dns_ns_list as lst %}
         {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
         {% else %}<span class="dns-empty">Sin NS.</span>{% endif %}
       {% endwith %}
 
-      <p class="sec-title">MX — Mail</p>
+      <p class="section-title" style="margin-top:14px;">MX — Mail</p>
       {% with result1.dns_mx_list as lst %}
         {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
         {% else %}<span class="dns-empty">Sin MX.</span>{% endif %}
       {% endwith %}
 
-      <p class="sec-title">TXT</p>
+      <p class="section-title" style="margin-top:14px;">TXT</p>
       {% with result1.dns_txt_list as lst %}
-        {% if lst %}{% for r in lst %}<pre style="margin-bottom:4px;font-size:.78em;">{{ r }}</pre>{% endfor %}
+        {% if lst %}{% for r in lst %}<pre style="font-size:.78em; margin-bottom:4px;">{{ r }}</pre>{% endfor %}
         {% else %}<span class="dns-empty">Sin TXT.</span>{% endif %}
       {% endwith %}
     </div>
     {% else %}
-    <div class="col-header col-a"><h2>—</h2></div>
+    <div class="col-header col-a">—</div>
     <div class="card"><span class="dns-empty">Sin datos para este dominio.</span></div>
     {% endif %}
   </div>
 
-  <!-- Columna B -->
+  <!-- Column B -->
   <div>
     {% if result2 %}
-    <div class="col-header col-b"><h2>{{ result2.domain }}</h2></div>
-
+    <div class="col-header col-b">{{ result2.domain }}</div>
     <div class="card">
-      <p class="sec-title">WHOIS</p>
+      <p class="section-title">WHOIS</p>
       <div class="data-row"><span class="data-label">Registrar</span><span class="data-value">{{ result2.registrar|default:"—" }}</span></div>
       <div class="data-row"><span class="data-label">Creación</span><span class="data-value">{{ result2.creation_date|default:"—" }}</span></div>
       <div class="data-row"><span class="data-label">Expiración</span><span class="data-value">{{ result2.expiration_date|default:"—" }}</span></div>
 
-      <p class="sec-title">A — IPv4</p>
+      <p class="section-title" style="margin-top:16px;">A — IPv4</p>
       {% with result2.dns_a_list as lst %}
         {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
         {% else %}<span class="dns-empty">Sin registros A.</span>{% endif %}
       {% endwith %}
 
-      <p class="sec-title">NS — Name Servers</p>
+      <p class="section-title" style="margin-top:14px;">NS — Name Servers</p>
       {% with result2.dns_ns_list as lst %}
         {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
         {% else %}<span class="dns-empty">Sin NS.</span>{% endif %}
       {% endwith %}
 
-      <p class="sec-title">MX — Mail</p>
+      <p class="section-title" style="margin-top:14px;">MX — Mail</p>
       {% with result2.dns_mx_list as lst %}
         {% if lst %}<ul class="dns-list">{% for r in lst %}<li>{{ r }}</li>{% endfor %}</ul>
         {% else %}<span class="dns-empty">Sin MX.</span>{% endif %}
       {% endwith %}
 
-      <p class="sec-title">TXT</p>
+      <p class="section-title" style="margin-top:14px;">TXT</p>
       {% with result2.dns_txt_list as lst %}
-        {% if lst %}{% for r in lst %}<pre style="margin-bottom:4px;font-size:.78em;">{{ r }}</pre>{% endfor %}
+        {% if lst %}{% for r in lst %}<pre style="font-size:.78em; margin-bottom:4px;">{{ r }}</pre>{% endfor %}
         {% else %}<span class="dns-empty">Sin TXT.</span>{% endif %}
       {% endwith %}
     </div>
     {% else %}
-    <div class="col-header col-b"><h2>—</h2></div>
+    <div class="col-header col-b">—</div>
     <div class="card"><span class="dns-empty">Sin datos para este dominio.</span></div>
     {% endif %}
   </div>
 
-</div><!-- /col-grid -->
+</div>
 
 {% if data1 %}{{ data1|json_script:"_cmp-data1" }}{% endif %}
 {% if data2 %}{{ data2|json_script:"_cmp-data2" }}{% endif %}
@@ -156,9 +153,9 @@ function doExportCmp() {
 </script>
 
 {% elif q1 or q2 %}
-  <!-- Errores ya mostrados arriba -->
+  <!-- Errors shown above -->
 {% else %}
-<div class="alert alert-info">&#x2139; Introduce dos dominios para comparar su WHOIS y registros DNS lado a lado.</div>
+<div class="alert alert-info">ℹ Introduce dos dominios para comparar su WHOIS y registros DNS lado a lado.</div>
 {% endif %}
 
 {% endblock %}

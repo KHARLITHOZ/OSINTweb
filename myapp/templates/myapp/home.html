@@ -3,62 +3,127 @@
 
 {% block extra_head %}
 <style>
-  .hero { text-align: center; padding: 60px 20px 40px; }
-  .hero h1 { font-size: 2.4em; letter-spacing: 4px; margin-bottom: 12px; }
-  .hero p { color: #88aaff; font-size: 1.05em; max-width: 560px; margin: 0 auto 32px; line-height: 1.6; }
-  .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 8px; }
-  .tool-card {
-    background: #060c1a; border: 1px solid #1e3a5f; border-radius: 8px;
-    padding: 28px 20px; text-align: center; text-decoration: none;
-    transition: border-color 0.2s, transform 0.2s;
-    display: block;
+  /* ─── Hero ─────────────────────────────────────────── */
+  .hero {
+    text-align: center; padding: 64px 20px 48px;
   }
-  .tool-card:hover { border-color: #00ff88; transform: translateY(-2px); }
-  .tool-card .icon { font-size: 2em; margin-bottom: 12px; }
-  .tool-card .name { color: #00ff88; font-weight: bold; font-size: 1.05em; margin-bottom: 6px; }
-  .tool-card .desc { color: #88aaff; font-size: 0.82em; line-height: 1.5; }
-  .quick-search { display: flex; gap: 10px; max-width: 560px; margin: 0 auto; }
-  .quick-search input { flex: 1; }
-  .cursor { animation: blink 1s step-end infinite; }
+  .hero-eyebrow {
+    display: inline-block; background: var(--accent-dim); border: 1px solid rgba(79,158,255,0.2);
+    border-radius: 20px; padding: 5px 14px; font-size: 0.78em; font-weight: 600;
+    color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 22px;
+  }
+  .hero h1 {
+    font-size: clamp(2em, 5vw, 3em); font-weight: 700; letter-spacing: -0.04em;
+    line-height: 1.12; margin-bottom: 18px; color: var(--text);
+  }
+  .hero h1 .gradient-text {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-sub {
+    color: var(--text2); font-size: 1.0em; max-width: 500px; margin: 0 auto 36px;
+    line-height: 1.7; min-height: 1.7em;
+  }
+  .cursor { display: inline-block; width: 2px; height: 1em; background: var(--accent); margin-left: 2px; vertical-align: middle; animation: blink 1s step-end infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* ─── Status bar ────────────────────────────────────── */
   .status-bar {
-    background: #060c1a; border: 1px solid #1e3a5f; border-radius: 6px;
-    padding: 12px 20px; display: flex; gap: 32px; flex-wrap: wrap;
-    font-size: 0.85em; margin-bottom: 24px;
+    display: flex; gap: 0; flex-wrap: wrap; margin-bottom: 28px;
+    background: var(--glass); border: 1px solid var(--border); border-radius: var(--r);
+    overflow: hidden;
   }
-  .status-item { display: flex; gap: 8px; align-items: center; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: #00ff88; }
-  .dot-off { background: #ff3333; }
+  .status-item {
+    display: flex; align-items: center; gap: 8px; padding: 11px 20px;
+    font-size: 0.82em; color: var(--text2); font-weight: 500;
+    border-right: 1px solid var(--border); flex: 1; min-width: 160px;
+  }
+  .status-item:last-child { border-right: none; }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    background: var(--success);
+    box-shadow: 0 0 6px rgba(52,211,153,0.6);
+    animation: dotPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes dotPulse {
+    0%,100% { box-shadow: 0 0 4px rgba(52,211,153,0.5); }
+    50%      { box-shadow: 0 0 10px rgba(52,211,153,0.9); }
+  }
+
+  /* ─── Tool cards ────────────────────────────────────── */
+  .tools-section { margin-bottom: 20px; }
+  .tools-section h2 { margin-bottom: 16px; }
+  .tools-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px;
+  }
+  .tool-card {
+    background: var(--glass); border: 1px solid var(--border); border-radius: var(--r);
+    padding: 28px 22px; text-align: center; text-decoration: none;
+    transition: all 0.22s ease; display: block; position: relative; overflow: hidden;
+  }
+  .tool-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, var(--accent-dim), transparent);
+    opacity: 0; transition: opacity 0.22s;
+  }
+  .tool-card:hover::before { opacity: 1; }
+  .tool-card:hover {
+    border-color: rgba(79,158,255,0.35); transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(79,158,255,0.15);
+  }
+  .tool-card:active { transform: translateY(-1px); }
+  .tool-card .icon {
+    font-size: 2.0em; margin-bottom: 14px; display: block;
+    filter: drop-shadow(0 2px 8px rgba(79,158,255,0.3));
+  }
+  .tool-card .name {
+    color: var(--text); font-weight: 600; font-size: 0.95em;
+    margin-bottom: 7px; letter-spacing: -0.01em;
+  }
+  .tool-card .desc {
+    color: var(--text2); font-size: 0.79em; line-height: 1.55;
+  }
+
+  /* ─── Info banner ───────────────────────────────────── */
+  .info-banner {
+    background: var(--accent-dim); border: 1px solid rgba(79,158,255,0.15);
+    border-radius: var(--r); padding: 16px 22px;
+    color: var(--accent); font-size: 0.855em; font-weight: 500;
+    display: flex; align-items: center; gap: 10px;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 
 <div class="hero">
-  <h1>[ OSINT ]</h1>
-  <p><span id="typing-text"></span><span class="cursor">_</span></p>
+  <div class="hero-eyebrow">Open Source Intelligence</div>
+  <h1>Plataforma <span class="gradient-text">OSINT</span></h1>
+  <p class="hero-sub"><span id="typing-text"></span><span class="cursor"></span></p>
 </div>
+
 <script>
 (function() {
-  const phrases = [
+  var phrases = [
     "Analiza IPs, dominios y correos electrónicos.",
     "Inteligencia en fuentes abiertas.",
     "Investiga la infraestructura digital.",
-    "OSINT profesional y sin API keys.",
+    "OSINT profesional y sin API keys externas.",
     "Mapea relaciones entre entidades.",
   ];
-  let pi = 0, ci = 0, deleting = false;
-  const el = document.getElementById('typing-text');
+  var pi=0, ci=0, deleting=false, el=document.getElementById('typing-text');
   function tick() {
-    const phrase = phrases[pi];
+    var phrase=phrases[pi];
     if (!deleting) {
-      el.textContent = phrase.slice(0, ++ci);
-      if (ci === phrase.length) { deleting = true; setTimeout(tick, 1800); return; }
+      el.textContent=phrase.slice(0,++ci);
+      if(ci===phrase.length){deleting=true; setTimeout(tick,1900); return;}
     } else {
-      el.textContent = phrase.slice(0, --ci);
-      if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; setTimeout(tick, 400); return; }
+      el.textContent=phrase.slice(0,--ci);
+      if(ci===0){deleting=false; pi=(pi+1)%phrases.length; setTimeout(tick,380); return;}
     }
-    setTimeout(tick, deleting ? 40 : 65);
+    setTimeout(tick, deleting?38:62);
   }
   tick();
 })();
@@ -66,49 +131,49 @@
 
 <!-- Estado de servicios -->
 <div class="status-bar">
-  <span class="status-item"><span class="dot"></span> IP Lookup (ip-api.com)</span>
-  <span class="status-item"><span class="dot"></span> WHOIS / DNS</span>
-  <span class="status-item"><span class="dot"></span> Historial persistente</span>
-  <span class="status-item"><span class="dot"></span> Análisis IA (Claude)</span>
+  <span class="status-item"><span class="dot"></span>IP Lookup (ip-api.com)</span>
+  <span class="status-item"><span class="dot"></span>WHOIS / DNS</span>
+  <span class="status-item"><span class="dot"></span>Historial persistente</span>
+  <span class="status-item"><span class="dot"></span>Análisis IA (Claude)</span>
 </div>
 
 <!-- Herramientas -->
-<div class="card">
-  <h2>Herramientas</h2>
+<div class="tools-section card">
+  <h2>Herramientas disponibles</h2>
   <div class="tools-grid">
 
-    <a href="/buscar/ip/" class="tool-card">
-      <div class="icon">&#x1F5A7;</div>
+    <a href="{% url 'buscar_ip' %}" class="tool-card">
+      <span class="icon">🖧</span>
       <div class="name">IP Lookup</div>
       <div class="desc">Geolocalización, ASN, ISP, detección de proxy y hosting</div>
     </a>
 
-    <a href="/buscar/dominio/" class="tool-card">
-      <div class="icon">&#x1F310;</div>
+    <a href="{% url 'buscar_dominio' %}" class="tool-card">
+      <span class="icon">🌐</span>
       <div class="name">Dominio</div>
       <div class="desc">WHOIS, registrar, fechas, registros DNS (A, MX, NS, TXT, CNAME)</div>
     </a>
 
-    <a href="/buscar/email/" class="tool-card">
-      <div class="icon">&#x2709;</div>
+    <a href="{% url 'buscar_email' %}" class="tool-card">
+      <span class="icon">✉</span>
       <div class="name">Email</div>
       <div class="desc">Verificación de filtraciones y brechas de datos conocidas</div>
     </a>
 
-    <a href="/historial/" class="tool-card">
-      <div class="icon">&#x1F4CB;</div>
+    <a href="{% url 'historial' %}" class="tool-card">
+      <span class="icon">📋</span>
       <div class="name">Historial</div>
-      <div class="desc">Registro de todas las consultas realizadas en esta plataforma</div>
+      <div class="desc">Registro de todas las consultas realizadas en la plataforma</div>
     </a>
 
-    <a href="/grafo/" class="tool-card">
-      <div class="icon">&#x1F578;</div>
+    <a href="{% url 'grafo' %}" class="tool-card">
+      <span class="icon">🕸</span>
       <div class="name">Grafo</div>
       <div class="desc">Visualización de relaciones entre entidades investigadas</div>
     </a>
 
-    <a href="/buscar/comparar/" class="tool-card">
-      <div class="icon">&#x2194;</div>
+    <a href="{% url 'comparar_dominios' %}" class="tool-card">
+      <span class="icon">⇔</span>
       <div class="name">Comparar</div>
       <div class="desc">Comparación lado a lado de dos dominios (WHOIS + DNS)</div>
     </a>
@@ -116,9 +181,9 @@
   </div>
 </div>
 
-<!-- Aviso -->
-<div class="alert alert-info">
-  &#x2139; Esta plataforma usa únicamente fuentes públicas y APIs gratuitas. Úsala de forma ética y responsable.
+<div class="info-banner">
+  <span>ℹ</span>
+  Esta plataforma usa únicamente fuentes públicas y APIs gratuitas. Úsala de forma ética y responsable.
 </div>
 
 {% endblock %}

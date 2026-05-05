@@ -3,101 +3,141 @@
 
 {% block extra_head %}
 <style>
+  .filter-row {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; align-items: center;
+  }
+  .filter-chip {
+    padding: 6px 14px; border-radius: 20px; font-size: 0.82em; font-weight: 600;
+    border: 1px solid var(--border); color: var(--text2); text-decoration: none;
+    background: var(--glass); transition: all 0.16s;
+  }
+  .filter-chip:hover { background: var(--glass-hover); color: var(--text); border-color: var(--border-hover); }
+  .filter-chip.active { background: var(--accent-dim); color: var(--accent); border-color: rgba(79,158,255,0.3); }
+  .filter-count { color: var(--text2); font-size: 0.82em; margin-left: auto; }
+
+  /* Type badges */
   .badge {
-    display: inline-block; padding: 2px 10px; border-radius: 3px;
-    font-size: 0.78em; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+    display: inline-block; padding: 3px 9px; border-radius: 6px;
+    font-size: 0.75em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
   }
-  .badge-ip     { background: #001a2a; border: 1px solid #88aaff; color: #88aaff; }
-  .badge-domain { background: #002a10; border: 1px solid #00ff88; color: #00ff88; }
-  .badge-email  { background: #2a1a00; border: 1px solid #ff8800; color: #ffaa44; }
-  .badge-ok  { background: #002a10; border: 1px solid #00ff88; color: #00ff88; }
-  .badge-err { background: #2a0000; border: 1px solid #ff3333; color: #ff6666; }
-  .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
-  .filter-bar a {
-    padding: 5px 14px; border-radius: 4px; font-size: 0.85em;
-    border: 1px solid #1e3a5f; color: #88aaff; text-decoration: none; transition: all 0.2s;
+  .badge-ip     { background: var(--accent-dim);   border: 1px solid rgba(79,158,255,0.25);  color: var(--accent);  }
+  .badge-domain { background: var(--success-dim);  border: 1px solid rgba(52,211,153,0.25);  color: var(--success); }
+  .badge-email  { background: var(--warn-dim);     border: 1px solid rgba(251,191,36,0.25);  color: var(--warn);    }
+  .badge-ok     { background: var(--success-dim);  border: 1px solid rgba(52,211,153,0.25);  color: var(--success); }
+  .badge-err    { background: var(--danger-dim);   border: 1px solid rgba(248,113,113,0.25); color: var(--danger);  }
+
+  /* View toggle */
+  .view-toggle { display: flex; gap: 6px; margin-left: 8px; }
+  .view-btn {
+    padding: 6px 13px; border-radius: 8px; font-size: 0.8em; font-weight: 500;
+    border: 1px solid var(--border); color: var(--text2); background: var(--glass);
+    cursor: pointer; transition: all 0.16s;
   }
-  .filter-bar a:hover, .filter-bar a.active { background: #00ff88; color: #0a0f1e; border-color: #00ff88; }
-  .filter-bar .count { color: #445; font-size: 0.8em; margin-left: auto; }
-  tr:hover td { background: #0d1a30; }
-  .query-link { color: #00ff88; text-decoration: none; }
+  .view-btn.active, .view-btn:hover {
+    background: var(--accent-dim); color: var(--accent); border-color: rgba(79,158,255,0.3);
+  }
+
+  /* Query link */
+  .query-link { color: var(--accent); text-decoration: none; font-size: 0.85em; }
   .query-link:hover { text-decoration: underline; }
-  .pagination { display: flex; gap: 8px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+
+  /* Pagination */
+  .pagination { display: flex; gap: 6px; justify-content: center; margin-top: 22px; flex-wrap: wrap; }
   .pagination a, .pagination span {
-    padding: 6px 14px; border-radius: 4px; border: 1px solid #1e3a5f;
-    color: #88aaff; text-decoration: none; font-size: 0.9em; transition: all 0.2s;
+    padding: 7px 13px; border-radius: 8px; border: 1px solid var(--border);
+    color: var(--text2); text-decoration: none; font-size: 0.855em; transition: all 0.16s;
+    background: var(--glass);
   }
-  .pagination a:hover { border-color: #00ff88; color: #00ff88; }
-  .pagination .current { background: #00ff88; color: #0a0f1e; border-color: #00ff88; font-weight: bold; }
-  .pagination .disabled { color: #333; cursor: default; }
-  .empty-state { text-align: center; padding: 60px 20px; color: #445; }
-  .empty-state .big { font-size: 3em; margin-bottom: 16px; }
+  .pagination a:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .pagination .current {
+    background: var(--accent-dim); color: var(--accent);
+    border-color: rgba(79,158,255,0.35); font-weight: 700;
+  }
+  .pagination .disabled { color: var(--text3); cursor: default; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 70px 20px; }
+  .empty-state .big { font-size: 3em; margin-bottom: 18px; opacity: 0.5; }
+  .empty-state p { color: var(--text2); }
+  .empty-state a { color: var(--accent); text-decoration: none; }
+
   /* Timeline */
   .timeline { list-style: none; padding: 0; position: relative; }
-  .timeline::before { content:''; position:absolute; left:18px; top:0; bottom:0; width:2px; background:var(--border); }
-  .tl-item { display:flex; gap:16px; padding:0 0 20px 0; position:relative; }
-  .tl-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; margin-top:4px; margin-left:12px; z-index:1; }
-  .tl-dot-ip     { background:var(--text2);  border:2px solid var(--text2); }
-  .tl-dot-domain { background:var(--accent); border:2px solid var(--accent); }
-  .tl-dot-email  { background:var(--warn);   border:2px solid var(--warn); }
-  .tl-body { flex:1; background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:10px 14px; }
-  .tl-meta { font-size:.78em; color:var(--text2); margin-bottom:4px; }
-  .tl-query { font-size:.95em; color:var(--text); word-break:break-all; }
-  .view-toggle { display:flex; gap:8px; }
-  .view-btn { padding:5px 14px; border-radius:4px; font-size:.85em; border:1px solid var(--border); color:var(--text2); background:transparent; cursor:pointer; transition:all .2s; }
-  .view-btn.active,.view-btn:hover { background:var(--accent); color:#0a0f1e; border-color:var(--accent); }
+  .timeline::before {
+    content:''; position:absolute; left:17px; top:0; bottom:0;
+    width:1px; background: var(--border);
+  }
+  .tl-item { display:flex; gap:16px; padding:0 0 18px 0; }
+  .tl-dot {
+    width:11px; height:11px; border-radius:50%; flex-shrink:0;
+    margin-top:6px; margin-left:12px; z-index:1;
+    border: 2px solid currentColor;
+  }
+  .tl-dot-ip     { color:var(--accent);  background:var(--accent-dim); }
+  .tl-dot-domain { color:var(--success); background:var(--success-dim); }
+  .tl-dot-email  { color:var(--warn);    background:var(--warn-dim); }
+  .tl-body {
+    flex:1; background:var(--glass); border:1px solid var(--border);
+    border-radius: var(--r-sm); padding:10px 16px; transition: border-color 0.16s;
+  }
+  .tl-body:hover { border-color: var(--border-hover); }
+  .tl-meta { font-size:.78em; color:var(--text2); margin-bottom:5px; display:flex; gap:8px; align-items:center; }
+  .tl-query { font-size:.92em; color:var(--text); word-break:break-all; }
+
+  /* Table card no padding */
+  .table-card { padding: 0; overflow: hidden; }
 </style>
 {% endblock %}
 
 {% block content %}
-<h1>&#x1F4CB; Historial de Consultas</h1>
+<h1>Historial de Consultas</h1>
 
-<!-- Filtros + vista toggle -->
-<div class="filter-bar">
-  <a href="?tipo=&page=1" {% if not tipo_activo %}class="active"{% endif %}>Todos</a>
-  <a href="?tipo=ip&page=1" {% if tipo_activo == 'ip' %}class="active"{% endif %}>IP</a>
-  <a href="?tipo=domain&page=1" {% if tipo_activo == 'domain' %}class="active"{% endif %}>Dominio</a>
-  <a href="?tipo=email&page=1" {% if tipo_activo == 'email' %}class="active"{% endif %}>Email</a>
-  <span class="count">{{ total }} consulta{{ total|pluralize:"s" }}</span>
-  <a href="{% url 'export_historial' %}" class="btn-export" style="text-decoration:none;">&#x2B07; CSV</a>
-  <div class="view-toggle" style="margin-left:auto;">
-    <button class="view-btn" id="btnTable" onclick="setView('table')">&#x22A0; Tabla</button>
-    <button class="view-btn" id="btnTL"    onclick="setView('timeline')">&#x29BF; Timeline</button>
+<!-- Filters + toggle -->
+<div class="filter-row">
+  <a href="?tipo=&page=1" class="filter-chip {% if not tipo_activo %}active{% endif %}">Todos</a>
+  <a href="?tipo=ip&page=1" class="filter-chip {% if tipo_activo == 'ip' %}active{% endif %}">IP</a>
+  <a href="?tipo=domain&page=1" class="filter-chip {% if tipo_activo == 'domain' %}active{% endif %}">Dominio</a>
+  <a href="?tipo=email&page=1" class="filter-chip {% if tipo_activo == 'email' %}active{% endif %}">Email</a>
+  <span class="filter-count">{{ total }} consulta{{ total|pluralize:"s" }}</span>
+  <a href="{% url 'export_historial' %}" class="btn-export" style="text-decoration:none;">↓ CSV</a>
+  <div class="view-toggle">
+    <button class="view-btn" id="btnTable" onclick="setView('table')">⊟ Tabla</button>
+    <button class="view-btn" id="btnTL"    onclick="setView('timeline')">⊙ Timeline</button>
   </div>
 </div>
 
 {% if page_obj %}
 
-<!-- Vista Tabla -->
-<div id="viewTable" class="card" style="padding:0;overflow:hidden;">
+<!-- Table view -->
+<div id="viewTable" class="card table-card">
   <table>
     <thead>
       <tr>
-        <th>#</th><th>Tipo</th><th>Consulta</th><th>Fecha</th><th>Estado</th><th>Detalle</th>
+        <th>#</th><th>Tipo</th><th>Consulta</th><th>Fecha</th><th>Estado</th><th>Acción</th>
       </tr>
     </thead>
     <tbody>
       {% for rec in page_obj %}
       <tr>
-        <td style="color:#445;">{{ rec.id }}</td>
+        <td style="color:var(--text3); font-size:.85em;">{{ rec.id }}</td>
         <td>
           {% if rec.query_type == 'ip' %}<span class="badge badge-ip">IP</span>
           {% elif rec.query_type == 'domain' %}<span class="badge badge-domain">Dominio</span>
           {% else %}<span class="badge badge-email">Email</span>{% endif %}
         </td>
-        <td>{{ rec.query }}</td>
-        <td style="color:#88aaff;white-space:nowrap;">{{ rec.created_at|date:"d/m/Y H:i" }}</td>
+        <td style="font-weight:500;">{{ rec.query }}</td>
+        <td style="color:var(--text2); white-space:nowrap; font-size:.875em;">{{ rec.created_at|date:"d/m/Y H:i" }}</td>
         <td>
-          {% if rec.success %}<span class="badge badge-ok">&#x2714; OK</span>
-          {% else %}<span class="badge badge-err">&#x2716; Error</span>{% endif %}
+          {% if rec.success %}<span class="badge badge-ok">✔ OK</span>
+          {% else %}<span class="badge badge-err">✖ Error</span>{% endif %}
         </td>
         <td>
           {% if rec.success %}
-            {% if rec.query_type == 'ip' %}<a class="query-link" href="{% url 'buscar_ip' %}">&#x2192; Buscar de nuevo</a>
-            {% elif rec.query_type == 'domain' %}<a class="query-link" href="{% url 'buscar_dominio' %}">&#x2192; Buscar de nuevo</a>
-            {% elif rec.query_type == 'email' %}<a class="query-link" href="{% url 'buscar_email' %}">&#x2192; Buscar de nuevo</a>
+            {% if rec.query_type == 'ip' %}<a class="query-link" href="{% url 'buscar_ip' %}">→ Buscar</a>
+            {% elif rec.query_type == 'domain' %}<a class="query-link" href="{% url 'buscar_dominio' %}">→ Buscar</a>
+            {% elif rec.query_type == 'email' %}<a class="query-link" href="{% url 'buscar_email' %}">→ Buscar</a>
             {% endif %}
-          {% else %}<span style="color:#445;">—</span>{% endif %}
+          {% else %}<span style="color:var(--text3);">—</span>{% endif %}
         </td>
       </tr>
       {% endfor %}
@@ -105,7 +145,7 @@
   </table>
 </div>
 
-<!-- Vista Timeline -->
+<!-- Timeline view -->
 <div id="viewTL" style="display:none;">
   <ul class="timeline">
     {% for rec in page_obj %}
@@ -116,7 +156,7 @@
           {% if rec.query_type == 'ip' %}<span class="badge badge-ip">IP</span>
           {% elif rec.query_type == 'domain' %}<span class="badge badge-domain">Dominio</span>
           {% else %}<span class="badge badge-email">Email</span>{% endif %}
-          &nbsp;{{ rec.created_at|date:"d/m/Y H:i:s" }}
+          {{ rec.created_at|date:"d/m/Y H:i:s" }}
           {% if not rec.success %}&nbsp;<span class="badge badge-err">Error</span>{% endif %}
         </div>
         <div class="tl-query">{{ rec.query }}</div>
@@ -126,15 +166,15 @@
   </ul>
 </div>
 
-<!-- Paginación -->
+<!-- Pagination -->
 {% if page_obj.has_other_pages %}
 <div class="pagination">
   {% if page_obj.has_previous %}
-    <a href="?tipo={{ tipo_activo }}&page=1">&laquo;&laquo;</a>
-    <a href="?tipo={{ tipo_activo }}&page={{ page_obj.previous_page_number }}">&laquo; Ant</a>
+    <a href="?tipo={{ tipo_activo }}&page=1">«</a>
+    <a href="?tipo={{ tipo_activo }}&page={{ page_obj.previous_page_number }}">‹ Ant</a>
   {% else %}
-    <span class="disabled">&laquo;&laquo;</span>
-    <span class="disabled">&laquo; Ant</span>
+    <span class="disabled">«</span>
+    <span class="disabled">‹ Ant</span>
   {% endif %}
 
   {% for num in page_obj.paginator.page_range %}
@@ -146,23 +186,24 @@
   {% endfor %}
 
   {% if page_obj.has_next %}
-    <a href="?tipo={{ tipo_activo }}&page={{ page_obj.next_page_number }}">Sig &raquo;</a>
-    <a href="?tipo={{ tipo_activo }}&page={{ page_obj.paginator.num_pages }}">&raquo;&raquo;</a>
+    <a href="?tipo={{ tipo_activo }}&page={{ page_obj.next_page_number }}">Sig ›</a>
+    <a href="?tipo={{ tipo_activo }}&page={{ page_obj.paginator.num_pages }}">»</a>
   {% else %}
-    <span class="disabled">Sig &raquo;</span>
-    <span class="disabled">&raquo;&raquo;</span>
+    <span class="disabled">Sig ›</span>
+    <span class="disabled">»</span>
   {% endif %}
 </div>
 {% endif %}
 
 {% else %}
 <div class="card empty-state">
-  <div class="big">&#x1F4CB;</div>
-  <p>No hay consultas registradas aún.</p>
-  <p style="margin-top:8px;font-size:.9em;">
-    Empieza buscando una <a href="{% url 'buscar_ip' %}" style="color:var(--accent);">IP</a>,
-    <a href="{% url 'buscar_dominio' %}" style="color:var(--accent);">dominio</a> o
-    <a href="{% url 'buscar_email' %}" style="color:var(--accent);">email</a>.
+  <div class="big">📋</div>
+  <p style="margin-bottom:10px;">No hay consultas registradas aún.</p>
+  <p style="font-size:.9em;">
+    Empieza buscando una
+    <a href="{% url 'buscar_ip' %}">IP</a>,
+    <a href="{% url 'buscar_dominio' %}">dominio</a> o
+    <a href="{% url 'buscar_email' %}">email</a>.
   </p>
 </div>
 {% endif %}
@@ -178,5 +219,4 @@ function setView(v) {
 }
 setView(localStorage.getItem(_VK) || 'table');
 </script>
-
 {% endblock %}

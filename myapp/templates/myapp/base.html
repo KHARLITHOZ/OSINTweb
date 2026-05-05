@@ -4,290 +4,456 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}OSINTng{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    /* ═══════════════════════ TOKENS ═══════════════════════ */
     :root {
-      --bg:      #0a0f1e;
-      --bg2:     #0d1526;
-      --bg3:     #060c1a;
-      --border:  #1e3a5f;
-      --accent:  #00ff88;
-      --accent2: #00cc66;
-      --text:    #c8ffbe;
-      --text2:   #88aaff;
-      --warn:    #ff8800;
-      --danger:  #ff3333;
+      --bg:             #07070e;
+      --bg2:            #0c0c1c;
+      --bg3:            #10101f;
+      --glass:          rgba(255,255,255,0.038);
+      --glass-hover:    rgba(255,255,255,0.065);
+      --glass-active:   rgba(79,158,255,0.1);
+      --border:         rgba(255,255,255,0.075);
+      --border-hover:   rgba(255,255,255,0.14);
+      --accent:         #4f9eff;
+      --accent-dim:     rgba(79,158,255,0.12);
+      --accent-glow:    rgba(79,158,255,0.28);
+      --accent2:        #818cf8;
+      --accent2-dim:    rgba(129,140,248,0.12);
+      --text:           #e6e6f0;
+      --text2:          #64648c;
+      --text3:          #38385a;
+      --success:        #34d399;
+      --success-dim:    rgba(52,211,153,0.1);
+      --warn:           #fbbf24;
+      --warn-dim:       rgba(251,191,36,0.1);
+      --danger:         #f87171;
+      --danger-dim:     rgba(248,113,113,0.1);
+      --r-sm:           10px;
+      --r:              14px;
+      --r-lg:           20px;
+      --shadow:         0 1px 3px rgba(0,0,0,.5), 0 4px 20px rgba(0,0,0,.3);
+      --shadow-lg:      0 8px 40px rgba(0,0,0,.5);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; min-height: 100vh; }
 
-    /* ── Nav ──────────────────────────────── */
+    /* ─── Reset ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body {
+      background: var(--bg);
+      background-image: radial-gradient(ellipse 90% 40% at 50% -10%,
+        rgba(79,158,255,0.07) 0%, transparent 65%);
+      color: var(--text);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      min-height: 100vh;
+    }
+
+    /* ─── Navigation ─────────────────────────────────────── */
     nav {
-      background: #000;
-      border-bottom: 1px solid var(--accent);
-      padding: 10px 24px;
+      position: sticky; top: 0; z-index: 200;
+      height: 56px;
+      background: rgba(7,7,14,0.8);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
       display: flex;
       align-items: center;
-      gap: 4px;
-      flex-wrap: wrap;
+      gap: 2px;
     }
-    nav .brand { font-size: 1.2em; font-weight: bold; color: var(--accent); letter-spacing: 2px; margin-right: 12px; white-space: nowrap; }
+    .brand {
+      font-size: 0.95em; font-weight: 700; letter-spacing: 0.02em;
+      color: var(--text); margin-right: 18px; white-space: nowrap;
+      display: flex; align-items: center; gap: 8px; text-decoration: none;
+    }
+    .brand-pulse {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent-glow);
+      animation: brandPulse 3s ease-in-out infinite;
+    }
+    @keyframes brandPulse {
+      0%,100% { box-shadow: 0 0 8px var(--accent), 0 0 16px var(--accent-glow); }
+      50%      { box-shadow: 0 0 14px var(--accent), 0 0 28px var(--accent-glow); }
+    }
     nav a {
-      color: var(--text2); text-decoration: none; padding: 5px 11px;
-      border-radius: 4px; transition: background 0.2s; font-size: 0.9em; white-space: nowrap;
+      color: var(--text2); text-decoration: none;
+      padding: 6px 11px; border-radius: 8px;
+      font-size: 0.845em; font-weight: 500;
+      transition: background 0.16s, color 0.16s;
+      white-space: nowrap;
     }
-    nav a:hover { background: #1a2540; color: var(--accent); }
-    nav a.nav-active { color: var(--accent); border-bottom: 2px solid var(--accent); }
-    .nav-spacer { flex: 1; }
+    nav a:hover              { background: var(--glass-hover); color: var(--text); }
+    nav a.nav-active         { background: var(--glass-active); color: var(--accent); }
+    .nav-spacer              { flex: 1; }
     .nav-user {
-      display: flex; align-items: center; gap: 10px;
-      font-size: 0.8em; color: #556; white-space: nowrap;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.82em; white-space: nowrap;
     }
-    .nav-user span { color: var(--text2); }
+    .nav-user-chip {
+      color: var(--text); background: var(--glass);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 4px 11px; font-weight: 500; font-size: 0.9em;
+    }
     .btn-logout {
-      background: transparent; border: 1px solid #334; color: #556;
-      padding: 4px 10px; border-radius: 4px; font-family: inherit; font-size: 0.8em;
-      cursor: pointer; transition: all 0.2s;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text2); padding: 5px 12px; border-radius: 8px;
+      font-family: inherit; font-size: 0.82em; font-weight: 500;
+      cursor: pointer; transition: all 0.16s;
     }
-    .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+    .btn-logout:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-dim); }
 
-    /* ── Layout ───────────────────────────── */
-    .container { max-width: 960px; margin: 40px auto; padding: 0 20px; }
-    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 28px; margin-bottom: 24px; }
+    /* ─── Layout ─────────────────────────────────────────── */
+    .container { max-width: 1020px; margin: 0 auto; padding: 36px 24px 60px; }
 
-    /* ── Tipografía ───────────────────────── */
-    h1, h2, h3 { color: var(--accent); margin-bottom: 16px; }
-    h1 { font-size: 1.6em; letter-spacing: 1px; }
-    h2 { font-size: 1.2em; }
-    h3 { font-size: 1em; color: var(--text2); }
+    /* ─── Cards ──────────────────────────────────────────── */
+    .card {
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 24px 28px; margin-bottom: 18px;
+      box-shadow: var(--shadow); transition: border-color 0.2s, transform 0.2s;
+    }
 
-    /* ── Formularios ──────────────────────── */
-    .form-group { margin-bottom: 16px; }
-    label { display: block; color: var(--text2); margin-bottom: 6px; font-size: 0.9em; }
+    /* ─── Typography ─────────────────────────────────────── */
+    h1 {
+      font-size: 1.7em; font-weight: 700; color: var(--text);
+      letter-spacing: -0.025em; margin-bottom: 22px; line-height: 1.25;
+    }
+    h2 {
+      font-size: 1.0em; font-weight: 600; color: var(--text);
+      letter-spacing: -0.01em; margin-bottom: 14px;
+    }
+    h3 {
+      font-size: 0.75em; font-weight: 600; color: var(--text2);
+      text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px;
+    }
+
+    /* ─── Forms ──────────────────────────────────────────── */
+    .form-group { margin-bottom: 14px; }
+    label {
+      display: block; color: var(--text2); margin-bottom: 6px;
+      font-size: 0.855em; font-weight: 500;
+    }
     input[type="text"], input[type="email"], input[type="password"] {
-      width: 100%; background: var(--bg3); border: 1px solid var(--border);
-      border-radius: 4px; color: var(--text); padding: 10px 14px;
-      font-family: inherit; font-size: 1em; outline: none; transition: border-color 0.3s;
+      width: 100%; background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      color: var(--text); padding: 11px 16px;
+      font-family: inherit; font-size: 0.95em; outline: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
     }
-    input:focus { border-color: var(--accent); }
-    button, .btn {
-      background: var(--accent); color: var(--bg); border: none; padding: 10px 24px;
-      border-radius: 4px; font-family: inherit; font-weight: bold;
-      font-size: 1em; cursor: pointer; transition: background 0.3s;
-    }
-    button:hover, .btn:hover { background: var(--accent2); }
-    button:disabled { background: #334; color: #556; cursor: not-allowed; }
-    .btn-sec {
-      background: transparent; border: 1px solid var(--text2); color: var(--text2);
-      padding: 8px 18px; border-radius: 4px; font-family: inherit;
-      cursor: pointer; font-size: 0.9em; transition: all 0.2s;
-    }
-    .btn-sec:hover { background: var(--text2); color: var(--bg); }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    input::placeholder { color: var(--text3); }
 
-    /* ── Export bar ───────────────────────── */
+    /* ─── Buttons ─────────────────────────────────────────── */
+    button, .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      background: var(--accent); color: #fff; border: none;
+      padding: 10px 22px; border-radius: var(--r-sm);
+      font-family: inherit; font-weight: 600; font-size: 0.9em;
+      cursor: pointer; transition: all 0.18s ease;
+      white-space: nowrap;
+    }
+    button:hover, .btn:hover {
+      background: #6aaeff; transform: translateY(-1px);
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+    button:active, .btn:active { transform: translateY(0); box-shadow: none; }
+    button:disabled {
+      background: var(--bg3); color: var(--text3);
+      cursor: not-allowed; transform: none; box-shadow: none;
+    }
+    .btn-sec {
+      background: var(--glass); border: 1px solid var(--border);
+      color: var(--text2); padding: 9px 18px; border-radius: var(--r-sm);
+      font-family: inherit; font-weight: 500; font-size: 0.875em;
+      cursor: pointer; transition: all 0.16s; white-space: nowrap;
+    }
+    .btn-sec:hover { background: var(--glass-hover); border-color: var(--border-hover); color: var(--text); }
+
+    /* ─── Export bar ─────────────────────────────────────── */
     .export-bar {
-      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center;
+      display: flex; gap: 7px; flex-wrap: wrap;
+      margin-bottom: 14px; align-items: center;
     }
     .btn-export {
-      background: transparent; border: 1px solid var(--border); color: var(--text2);
-      padding: 6px 14px; border-radius: 4px; font-family: inherit; font-size: 0.85em;
-      cursor: pointer; transition: all 0.2s;
+      background: var(--glass); border: 1px solid var(--border); color: var(--text2);
+      padding: 7px 13px; border-radius: 8px;
+      font-family: inherit; font-size: 0.8em; font-weight: 500;
+      cursor: pointer; transition: all 0.16s;
     }
-    .btn-export:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-export:hover { background: var(--glass-hover); border-color: var(--accent); color: var(--accent); }
     .ai-btn {
-      background: #0a1a30; border: 1px solid var(--text2); color: var(--text2);
-      padding: 6px 14px; border-radius: 4px; font-family: inherit; font-size: 0.85em;
-      cursor: pointer; transition: all 0.2s; margin-left: auto;
+      background: linear-gradient(135deg, var(--accent2-dim), var(--accent-dim));
+      border: 1px solid rgba(129,140,248,0.3);
+      color: var(--accent2); padding: 7px 14px; border-radius: 8px;
+      font-family: inherit; font-size: 0.8em; font-weight: 600;
+      cursor: pointer; transition: all 0.18s; margin-left: auto;
     }
-    .ai-btn:hover { border-color: var(--accent); color: var(--accent); background: #0d1f3a; }
-    .ai-btn:disabled { color: #445; border-color: #334; cursor: not-allowed; background: transparent; }
+    .ai-btn:hover {
+      border-color: var(--accent2);
+      box-shadow: 0 0 18px rgba(129,140,248,0.25);
+    }
+    .ai-btn:disabled { opacity: 0.38; cursor: not-allowed; box-shadow: none; }
 
-    /* ── AI result box ────────────────────── */
+    /* ─── AI result ──────────────────────────────────────── */
     .ai-result {
-      background: #060f1e; border: 1px solid #1e3a5f; border-left: 3px solid var(--text2);
-      border-radius: 6px; padding: 16px; margin-bottom: 16px; font-size: 0.9em;
-      line-height: 1.6; color: var(--text); white-space: pre-wrap;
-      display: none;
+      background: linear-gradient(135deg, rgba(129,140,248,0.06), rgba(79,158,255,0.05));
+      border: 1px solid rgba(129,140,248,0.18); border-radius: var(--r);
+      padding: 20px; margin-bottom: 16px; font-size: 0.88em; line-height: 1.75;
+      color: var(--text); white-space: pre-wrap; display: none;
     }
-    .ai-result.visible { display: block; }
+    .ai-result.visible { display: block; animation: slideIn 0.28s ease; }
 
-    /* ── Tablas ───────────────────────────── */
+    /* ─── Tables ─────────────────────────────────────────── */
     table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
-    th { color: var(--text2); font-size: 0.85em; text-transform: uppercase; }
-    td { color: var(--text); word-break: break-word; }
+    th, td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--border); }
+    th { color: var(--text2); font-size: 0.755em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; }
+    td { color: var(--text); font-size: 0.9em; }
+    tbody tr { transition: background 0.12s; }
+    tbody tr:hover td { background: var(--glass); }
+    tbody tr:last-child td { border-bottom: none; }
 
-    /* ── Tags ─────────────────────────────── */
+    /* ─── Tags / Badges ──────────────────────────────────── */
     .tag {
-      display: inline-block; background: #1a2540; border: 1px solid var(--accent);
-      border-radius: 3px; padding: 2px 8px; font-size: 0.8em; margin: 2px; color: var(--accent);
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--accent-dim); border: 1px solid rgba(79,158,255,0.22);
+      border-radius: 6px; padding: 3px 9px;
+      font-size: 0.77em; font-weight: 600; color: var(--accent); letter-spacing: 0.02em;
     }
-    .tag-red { border-color: var(--danger); color: #ff6666; background: #2a0000; }
-    .tag-warn { border-color: var(--warn); color: var(--warn); background: #2a1a00; }
+    .tag-red  { background: var(--danger-dim);  border-color: rgba(248,113,113,0.25); color: var(--danger); }
+    .tag-warn { background: var(--warn-dim);    border-color: rgba(251,191,36,0.25);  color: var(--warn);   }
 
-    /* ── Alertas ──────────────────────────── */
-    .alert { padding: 12px 16px; border-radius: 4px; margin-bottom: 16px; }
-    .alert-warn  { background: #2a1a00; border: 1px solid var(--warn); color: #ffaa44; }
-    .alert-danger{ background: #2a0000; border: 1px solid var(--danger); color: #ff6666; }
-    .alert-ok    { background: #002a10; border: 1px solid var(--accent); color: var(--accent); }
-    .alert-info  { background: #001a2a; border: 1px solid var(--text2); color: var(--text2); }
+    /* ─── Alerts ─────────────────────────────────────────── */
+    .alert {
+      padding: 13px 18px; border-radius: var(--r-sm); margin-bottom: 14px;
+      font-size: 0.885em; font-weight: 500;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .alert-warn   { background: var(--warn-dim);    border: 1px solid rgba(251,191,36,0.2);   color: var(--warn);    }
+    .alert-danger { background: var(--danger-dim);  border: 1px solid rgba(248,113,113,0.2);  color: var(--danger);  }
+    .alert-ok     { background: var(--success-dim); border: 1px solid rgba(52,211,153,0.2);   color: var(--success); }
+    .alert-info   { background: var(--accent-dim);  border: 1px solid rgba(79,158,255,0.2);   color: var(--accent);  }
 
-    /* ── Grid ─────────────────────────────── */
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    /* ─── Grid ───────────────────────────────────────────── */
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
     @media (max-width: 640px) { .grid-3, .grid-2 { grid-template-columns: 1fr; } }
 
-    /* ── Stat cards ───────────────────────── */
+    /* ─── Stat cards ─────────────────────────────────────── */
     .stat-card {
-      background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
-      padding: 20px; text-align: center;
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: var(--r-sm); padding: 18px 20px; text-align: center;
+      transition: all 0.18s;
     }
-    .stat-card .num { font-size: 2em; color: var(--accent); font-weight: bold; }
-    .stat-card .lbl { font-size: 0.85em; color: var(--text2); margin-top: 4px; }
+    .stat-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+    .stat-card .num { font-size: 1.7em; font-weight: 700; color: var(--accent); line-height: 1.2; }
+    .stat-card .lbl { font-size: 0.77em; color: var(--text2); margin-top: 5px; font-weight: 500; }
 
-    /* ── Pre ──────────────────────────────── */
-    pre { background: var(--bg3); padding: 14px; border-radius: 4px; overflow-x: auto;
-          font-size: 0.85em; color: var(--text); border: 1px solid var(--border);
-          white-space: pre-wrap; }
+    /* ─── Data rows ──────────────────────────────────────── */
+    .data-row {
+      display: flex; gap: 10px; padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .data-row:last-child { border-bottom: none; }
+    .data-label { color: var(--text2); min-width: 140px; font-size: 0.845em; font-weight: 500; flex-shrink: 0; }
+    .data-value { color: var(--text); word-break: break-all; font-size: 0.9em; }
 
-    /* ── Copy button ──────────────────────── */
-    .copyable { cursor: pointer; }
-    .copyable:hover { text-decoration: underline; color: var(--accent); }
-    .copy-icon { font-size: 0.75em; opacity: 0.5; margin-left: 4px; user-select: none; }
-    .copy-icon:hover { opacity: 1; }
+    /* ─── Pre / code ─────────────────────────────────────── */
+    pre {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r-sm);
+      padding: 12px 16px; font-family: "SF Mono","Fira Code","JetBrains Mono",monospace;
+      font-size: 0.8em; color: var(--text); overflow-x: auto; white-space: pre-wrap;
+      margin-bottom: 8px;
+    }
 
-    /* ── Loading spinner ──────────────────── */
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    .loading-text { animation: blink 1s ease-in-out infinite; color: var(--accent); }
+    /* ─── Copyable ───────────────────────────────────────── */
+    .copyable { cursor: pointer; transition: color 0.14s; }
+    .copyable:hover { color: var(--accent); }
+    .copy-icon { font-size: 0.72em; opacity: 0.3; margin-left: 4px; user-select: none; }
+    .copy-icon:hover { opacity: 0.75; }
+
+    /* ─── Risk badges ────────────────────────────────────── */
+    .risk-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 8px; font-size: 0.855em; font-weight: 600;
+    }
+    .risk-ok   { background: var(--success-dim); border: 1px solid rgba(52,211,153,0.25);  color: var(--success); }
+    .risk-warn { background: var(--warn-dim);    border: 1px solid rgba(251,191,36,0.25);   color: var(--warn);    }
+    .risk-bad  { background: var(--danger-dim);  border: 1px solid rgba(248,113,113,0.25); color: var(--danger);  }
+
+    /* ─── Section title ──────────────────────────────────── */
+    .section-title {
+      color: var(--accent); font-size: 0.75em; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; margin-top: 4px;
+    }
+
+    /* ─── DNS list ───────────────────────────────────────── */
+    .dns-list { list-style: none; padding: 0; }
+    .dns-list li {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+      padding: 7px 12px; margin-bottom: 6px; font-size: 0.855em;
+      color: var(--text); word-break: break-all; transition: border-color 0.15s;
+    }
+    .dns-list li:hover { border-color: var(--border-hover); }
+    .dns-empty { color: var(--text3); font-size: 0.85em; font-style: italic; }
+
+    /* ─── Animations ─────────────────────────────────────── */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.45; }
+    }
+    .loading-text { animation: pulse 1.1s ease-in-out infinite; }
+    .anim-in { animation: fadeUp 0.32s ease both; }
+
+    /* ─── Footer ─────────────────────────────────────────── */
+    footer {
+      text-align: center; padding: 32px 24px;
+      color: var(--text3); font-size: 0.77em;
+      border-top: 1px solid var(--border); margin-top: 20px;
+    }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
 <body>
+
+  <!-- ── Navigation ────────────────────────────────────── -->
   <nav>
-    <span class="brand">&#91; OSINT &#93;</span>
+    <a href="{% url 'home' %}" class="brand">
+      <span class="brand-pulse"></span>
+      OSINT
+    </a>
+
     {% with url_name=request.resolver_match.url_name %}
-    <a href="{% url 'home' %}" {% if url_name == 'home' %}class="nav-active"{% endif %}>Inicio</a>
-    <a href="{% url 'buscar_ip' %}" {% if url_name == 'buscar_ip' %}class="nav-active"{% endif %}>IP</a>
-    <a href="{% url 'buscar_dominio' %}" {% if url_name == 'buscar_dominio' %}class="nav-active"{% endif %}>Dominio</a>
-    <a href="{% url 'buscar_email' %}" {% if url_name == 'buscar_email' %}class="nav-active"{% endif %}>Email</a>
+    <a href="{% url 'home' %}"              {% if url_name == 'home' %}class="nav-active"{% endif %}>Inicio</a>
+    <a href="{% url 'buscar_ip' %}"         {% if url_name == 'buscar_ip' %}class="nav-active"{% endif %}>IP</a>
+    <a href="{% url 'buscar_dominio' %}"    {% if url_name == 'buscar_dominio' %}class="nav-active"{% endif %}>Dominio</a>
+    <a href="{% url 'buscar_email' %}"      {% if url_name == 'buscar_email' %}class="nav-active"{% endif %}>Email</a>
     <a href="{% url 'comparar_dominios' %}" {% if url_name == 'comparar_dominios' %}class="nav-active"{% endif %}>Comparar</a>
-    <a href="{% url 'grafo' %}" {% if url_name == 'grafo' %}class="nav-active"{% endif %}>Grafo</a>
-    <a href="{% url 'historial' %}" {% if url_name == 'historial' %}class="nav-active"{% endif %}>Historial</a>
+    <a href="{% url 'grafo' %}"             {% if url_name == 'grafo' %}class="nav-active"{% endif %}>Grafo</a>
+    <a href="{% url 'historial' %}"         {% if url_name == 'historial' %}class="nav-active"{% endif %}>Historial</a>
     {% endwith %}
+
     <div class="nav-spacer"></div>
+
     {% if user.is_authenticated %}
     <div class="nav-user">
-      <span>{{ user.username }}</span>
+      <span class="nav-user-chip">{{ user.username }}</span>
       <form method="post" action="{% url 'logout' %}" style="display:inline;margin:0;">
         {% csrf_token %}
-        <button type="submit" class="btn-logout">[ salir ]</button>
+        <button type="submit" class="btn-logout">Salir</button>
       </form>
     </div>
     {% endif %}
   </nav>
 
+  <!-- ── Main container ────────────────────────────────── -->
   <div class="container">
     {% if messages %}
       {% for msg in messages %}
-        <div class="alert alert-ok">{{ msg }}</div>
+        <div class="alert alert-ok anim-in">✓ {{ msg }}</div>
       {% endfor %}
     {% endif %}
     {% block content %}{% endblock %}
   </div>
 
-  <footer style="text-align:center; padding: 20px; color: #334; font-size: 0.8em; border-top: 1px solid var(--border); margin-top: 40px;">
-    &copy; {% now "Y" %} OSINTng &mdash; RochiMX
-  </footer>
+  <footer>&copy; {% now "Y" %} OSINTng &mdash; by RochiMX</footer>
 
   <script>
-  // ── Loading state en formularios ─────────────────────────────────────────
+  /* ── Form loading state ───────────────────────────────── */
   document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('form[method="post"]').forEach(function(form) {
-      // Solo formularios OSINT (no login/logout/register)
-      var hasOsintInput = form.querySelector('input[name="ip"], input[name="dominio"], input[name="email"]');
-      if (!hasOsintInput) return;
+      if (!form.querySelector('input[name="ip"], input[name="dominio"], input[name="email"]')) return;
       form.addEventListener('submit', function() {
         var btn = form.querySelector('button[type="submit"]');
         if (btn && !btn.disabled) {
-          btn.textContent = '[ buscando... ]';
+          btn.textContent = 'Analizando…';
           btn.classList.add('loading-text');
           btn.disabled = true;
         }
       });
     });
+
+    /* Entrance animation stagger */
+    var els = document.querySelectorAll('.card, .tool-card, .stat-card');
+    els.forEach(function(el, i) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(12px)';
+      el.style.transition = 'opacity 0.3s ease ' + (i * 45) + 'ms, transform 0.3s ease ' + (i * 45) + 'ms, border-color 0.18s, box-shadow 0.18s';
+      requestAnimationFrame(function() {
+        setTimeout(function() { el.style.opacity='1'; el.style.transform='translateY(0)'; }, 20 + i * 45);
+      });
+    });
   });
 
-  // ── Copy to clipboard ────────────────────────────────────────────────────
+  /* ── Clipboard ───────────────────────────────────────── */
   function copyText(text, el) {
     navigator.clipboard.writeText(text).then(function() {
-      var orig = el ? el.textContent : '';
-      if (el) { el.textContent = '✓'; setTimeout(function(){ el.textContent = orig; }, 1200); }
+      if (el) { var o=el.textContent; el.textContent='✓'; setTimeout(function(){ el.textContent=o; }, 1200); }
     }).catch(function() {
-      // Fallback para navegadores sin clipboard API
-      var ta = document.createElement('textarea');
-      ta.value = text; document.body.appendChild(ta);
-      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      var ta=document.createElement('textarea'); ta.value=text;
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
     });
   }
 
-  // ── Export JSON ──────────────────────────────────────────────────────────
+  /* ── Export JSON ─────────────────────────────────────── */
   function exportJSON(data, filename) {
-    var blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-    var url  = URL.createObjectURL(blob);
-    var a    = document.createElement('a');
-    a.href = url; a.download = filename || 'osint_export.json';
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a); URL.revokeObjectURL(url);
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download=filename||'osint_export.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   }
 
-  // ── Análisis con IA ──────────────────────────────────────────────────────
+  /* ── AI analysis ─────────────────────────────────────── */
   function analyzeWithAI(type, data, btn, resultEl) {
     if (!btn || btn.disabled) return;
-    btn.disabled = true;
-    btn.textContent = '[ analizando... ]';
-    if (resultEl) { resultEl.className = 'ai-result'; resultEl.textContent = ''; }
-
+    btn.disabled = true; btn.textContent = 'Analizando…';
+    if (resultEl) { resultEl.className='ai-result'; resultEl.textContent=''; }
     fetch('{% url "api_analyze" %}', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
       body: JSON.stringify({type: type, data: data}),
     })
-    .then(function(r) { return r.json(); })
-    .then(function(json) {
-      if (resultEl) {
-        resultEl.textContent = json.analysis || json.error || 'Sin respuesta.';
-        resultEl.className = 'ai-result visible';
-      }
-      if (btn) { btn.disabled = false; btn.textContent = '🤖 Analizar con IA'; }
+    .then(function(r){ return r.json(); })
+    .then(function(json){
+      if (resultEl) { resultEl.textContent=json.analysis||json.error||'Sin respuesta.'; resultEl.className='ai-result visible'; }
+      if (btn) { btn.disabled=false; btn.textContent='✦ Analizar con IA'; }
     })
-    .catch(function(err) {
-      if (resultEl) { resultEl.textContent = 'Error de red: ' + err; resultEl.className = 'ai-result visible'; }
-      if (btn) { btn.disabled = false; btn.textContent = '🤖 Analizar con IA'; }
+    .catch(function(err){
+      if (resultEl) { resultEl.textContent='Error: '+err; resultEl.className='ai-result visible'; }
+      if (btn) { btn.disabled=false; btn.textContent='✦ Analizar con IA'; }
     });
   }
 
-  // ── CSRF helper ──────────────────────────────────────────────────────────
+  /* ── CSRF ────────────────────────────────────────────── */
   function getCookie(name) {
-    var val = null;
-    document.cookie.split(';').forEach(function(c) {
-      var p = c.trim().split('=');
-      if (p[0] === name) val = decodeURIComponent(p[1]);
+    var val=null;
+    document.cookie.split(';').forEach(function(c){
+      var p=c.trim().split('='); if(p[0]===name) val=decodeURIComponent(p[1]);
     });
     return val;
   }
 
-  // ── Búsquedas recientes (localStorage) ───────────────────────────────────
+  /* ── Recent searches ─────────────────────────────────── */
   function osintAddRecent(type, query) {
     try {
-      var key = 'osint_recent';
-      var list = JSON.parse(localStorage.getItem(key) || '[]');
-      list = list.filter(function(x){ return !(x.type===type && x.query===query); });
-      list.unshift({type: type, query: query, ts: Date.now()});
-      if (list.length > 20) list = list.slice(0, 20);
-      localStorage.setItem(key, JSON.stringify(list));
-    } catch(e) {}
+      var key='osint_recent', list=JSON.parse(localStorage.getItem(key)||'[]');
+      list=list.filter(function(x){ return !(x.type===type&&x.query===query); });
+      list.unshift({type:type, query:query, ts:Date.now()});
+      if(list.length>20) list=list.slice(0,20);
+      localStorage.setItem(key,JSON.stringify(list));
+    } catch(e){}
   }
   </script>
 </body>
