@@ -1,54 +1,59 @@
-# ============================================
-# OSINTng - Plataforma OSINT | Dockerfile
-# ============================================
+# ── Build stage — compile Tailwind ────────────────────────────────────────────
+FROM node:22-alpine AS frontend-builder
+
+WORKDIR /build
+COPY package.json tailwind.config.js ./
+COPY static/css/app.css ./static/css/app.css
+COPY templates/ ./templates/
+COPY static/js/ ./static/js/
+
+RUN npm ci && npm run build
+
+# ── Runtime stage ──────────────────────────────────────────────────────────────
 FROM python:3.13-slim
 
-# Evitar prompts interactivos
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Dependencias del sistema + herramientas OSINT
+# System deps (minimal — only what's strictly required)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
     curl \
-    wget \
-    whois \
-    dnsutils \
-    nmap \
     libpq-dev \
     gcc \
-    libcairo2-dev \
-    pkg-config \
-    python3-dev \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Directorio de trabajo
 WORKDIR /app
 
-# Instalar dependencias Python primero (cache de Docker)
+# Install Python deps first (layer cache)
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Instalar herramientas OSINT via pip
-RUN pip install --no-cache-dir \
-    sherlock-project \
-    holehe \
-    maigret
-
-# Copiar el proyecto
+# Copy project code
 COPY . .
 
-# Recolectar archivos estaticos
-RUN python manage.py collectstatic --noinput 2>/dev/null || true
+# Copy built Tailwind CSS from frontend stage
+COPY --from=frontend-builder /build/static/css/dist/ ./static/css/dist/
 
-# Puerto
+# Create directories
+RUN mkdir -p /app/logs /app/staticfiles
+
+# Create non-root user
+RUN addgroup --system django && adduser --system --ingroup django django && \
+    chown -R django:django /app
+
+USER django
+
 EXPOSE 8000
 
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD curl -f http://localhost:8000/ || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=20s \
+    CMD curl -sf http://localhost:8000/health/ || exit 1
 
-# Comando por defecto
-CMD ["gunicorn", "mysite.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120"]
+CMD ["gunicorn", "config.wsgi:application", "--config", "gunicorn.conf.py"]

@@ -1,0 +1,14 @@
+{
+  "name": "osint-platform",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tailwindcss -i ./static/css/app.css -o ./static/css/dist/tailwind.css --minify",
+    "watch": "tailwindcss -i ./static/css/app.css -o ./static/css/dist/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17",
+    "@tailwindcss/forms": "^0.5.9",
+    "@tailwindcss/typography": "^0.5.15"
+  }
+}

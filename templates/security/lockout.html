@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Cuenta bloqueada — OSINTng{% endblock %}
+{% block content %}
+<div class="flex flex-col items-center justify-center py-24 text-center">
+  <div class="text-5xl mb-5">🔒</div>
+  <h1 class="text-xl font-semibold text-danger mb-2">Cuenta bloqueada temporalmente</h1>
+  <p class="text-muted text-sm mb-6 max-w-sm">
+    Demasiados intentos de inicio de sesión fallidos. Tu acceso está bloqueado por 1 hora.
+  </p>
+  <a href="/" class="btn-secondary">← Volver</a>
+</div>
+{% endblock %}

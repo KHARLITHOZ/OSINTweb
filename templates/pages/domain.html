@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Búsqueda Dominio — OSINTng{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold tracking-tight mb-6">Búsqueda de Dominio</h1>
+
+<div class="card mb-6">
+  <form method="post" data-osint>
+    {% csrf_token %}
+    <div class="flex gap-3">
+      <input type="text" name="dominio" placeholder="Ej: google.com"
+             value="{{ query|default:'' }}"
+             class="field flex-1"
+             autocomplete="off" spellcheck="false" maxlength="253" required>
+      <button type="submit" class="btn-primary">Analizar</button>
+    </div>
+  </form>
+</div>
+
+{% if error %}
+<div class="alert-danger mb-6 anim-in" role="alert"><span>⚠</span> <span>{{ error }}</span></div>
+{% endif %}
+
+{% if result %}
+<div class="anim-in space-y-5">
+
+  {# Export / AI #}
+  <div class="flex flex-wrap gap-2 items-center">
+    <button class="btn-export" onclick="exportJSON(domainData, 'domain_{{ result.domain }}.json')">↓ JSON</button>
+    <button class="btn-export" onclick="exportCSVDomain()">↓ CSV</button>
+    <button class="btn-export" onclick="exportPDF()">↓ PDF</button>
+    <button class="btn-ai ml-auto"
+            onclick="analyzeWithAI('domain', domainData, this, document.getElementById('ai-result'))">
+      ✦ Analizar con IA
+    </button>
+  </div>
+  <div id="ai-result"
+       class="hidden bg-gradient-to-br from-accent2/[0.06] to-accent/[0.05]
+              border border-accent2/20 rounded-xl p-5 text-sm leading-relaxed prose prose-invert max-w-none">
+  </div>
+
+  {# WHOIS #}
+  <div class="card">
+    <p class="section-label">WHOIS</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+      <div class="data-row"><span class="data-label">Dominio</span><span class="data-value font-mono font-semibold">{{ result.domain }}</span></div>
+      <div class="data-row"><span class="data-label">Registrar</span><span class="data-value">{{ result.registrar|default:"—" }}</span></div>
+      <div class="data-row"><span class="data-label">Creación</span><span class="data-value">{{ result.creation_date|default:"—" }}</span></div>
+      <div class="data-row"><span class="data-label">Expiración</span><span class="data-value">{{ result.expiration_date|default:"—" }}</span></div>
+    </div>
+  </div>
+
+  {# DNS #}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+    {% macro dns_list field_name label badge_class %}
+    <div class="card">
+      <p class="section-label">{{ label }}</p>
+      {% with items=result|get_list:field_name %}
+      {% if items %}
+        <ul class="space-y-1.5">
+          {% for item in items %}
+          <li class="bg-bg2 border border-white/[0.06] rounded-lg px-3 py-1.5
+                     text-xs font-mono text-ink flex items-center justify-between group">
+            <span class="break-all">{{ item }}</span>
+            <button onclick="copyText('{{ item|escapejs }}', this)"
+                    class="opacity-0 group-hover:opacity-60 hover:!opacity-100
+                           text-muted transition-opacity text-[0.65rem]">⧉</button>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-faint text-xs italic">Sin registros</p>
+      {% endif %}
+      {% endwith %}
+    </div>
+    {% endmacro %}
+
+    <div class="card">
+      <p class="section-label">Registros A (IPs)</p>
+      {% if result.dns_a_list %}
+      <ul class="space-y-1.5">
+        {% for ip in result.dns_a_list %}
+        <li class="bg-bg2 border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs font-mono text-ink
+                   flex items-center justify-between group">
+          <span>{{ ip }}</span>
+          <button onclick="copyText('{{ ip|escapejs }}', this)"
+                  class="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-muted transition-opacity text-[0.65rem]">⧉</button>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="text-faint text-xs italic">Sin registros</p>{% endif %}
+    </div>
+
+    <div class="card">
+      <p class="section-label">Registros MX</p>
+      {% if result.dns_mx_list %}
+      <ul class="space-y-1.5">
+        {% for mx in result.dns_mx_list %}
+        <li class="bg-bg2 border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs font-mono text-ink break-all">{{ mx }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="text-faint text-xs italic">Sin registros</p>{% endif %}
+    </div>
+
+    <div class="card">
+      <p class="section-label">Name Servers</p>
+      {% if result.name_servers_list %}
+      <ul class="space-y-1.5">
+        {% for ns in result.name_servers_list %}
+        <li class="bg-bg2 border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs font-mono text-ink break-all">{{ ns }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="text-faint text-xs italic">Sin registros</p>{% endif %}
+    </div>
+
+    <div class="card">
+      <p class="section-label">Registros TXT</p>
+      {% if result.dns_txt_list %}
+      <ul class="space-y-1.5">
+        {% for txt in result.dns_txt_list %}
+        <li class="bg-bg2 border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs font-mono text-ink break-all">{{ txt }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="text-faint text-xs italic">Sin registros</p>{% endif %}
+    </div>
+  </div>
+
+  {# SPF / DMARC #}
+  {% if result.spf_record or result.dmarc_record %}
+  <div class="card">
+    <p class="section-label">Seguridad de email</p>
+    {% if result.spf_record %}
+    <div class="data-row items-start">
+      <span class="data-label">SPF</span>
+      <code class="data-value text-xs bg-bg2 px-2 py-1 rounded break-all">{{ result.spf_record }}</code>
+    </div>
+    {% endif %}
+    {% if result.dmarc_record %}
+    <div class="data-row items-start">
+      <span class="data-label">DMARC</span>
+      <code class="data-value text-xs bg-bg2 px-2 py-1 rounded break-all">{{ result.dmarc_record }}</code>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# Subdomains #}
+  {% if result.subdomains_list %}
+  <div class="card">
+    <p class="section-label">Subdominios (crt.sh) — {{ result.subdomains_list|length }}</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+      {% for sub in result.subdomains_list %}
+      <div class="bg-bg2 border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs font-mono text-muted break-all">{{ sub }}</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% load static %}{% static 'js/modules/pdf.js' %}"></script>
+<script>
+const domainData = {{ result_data|default:"null"|safe }};
+
+function exportCSVDomain() {
+  if (!domainData) return;
+  const flat = {};
+  for (const [k, v] of Object.entries(domainData)) {
+    flat[k] = Array.isArray(v) ? v.join('; ') : String(v ?? '');
+  }
+  const rows = [['Campo', 'Valor'], ...Object.entries(flat).map(([k, v]) => [k, v])];
+  const csv  = rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')).join('\n');
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
+    download: `domain_{{ result.domain|default:"export" }}.csv`,
+  });
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+function exportPDF() {
+  if (!domainData) return;
+  generateDomainPDF(domainData);
+}
+</script>
+{% endblock %}

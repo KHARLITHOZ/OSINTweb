@@ -1,0 +1,62 @@
+{% load static %}
+{% with url_name=request.resolver_match.url_name %}
+<nav class="sticky top-0 z-50 h-14 bg-bg/80 backdrop-blur-[24px] border-b border-white/[0.075]
+            flex items-center gap-0.5 px-6" aria-label="Navegación principal">
+
+  {# Brand #}
+  <a href="{% url 'home' %}" class="flex items-center gap-2 font-bold text-sm text-ink
+            mr-4 tracking-wide hover:opacity-80 transition-opacity" aria-label="OSINTng inicio">
+    <span class="w-2 h-2 rounded-full bg-accent pulse-glow" aria-hidden="true"></span>
+    OSINT<span class="text-accent">ng</span>
+  </a>
+
+  {# Nav links #}
+  {% url 'home'             as url_home %}
+  {% url 'buscar_ip'        as url_ip %}
+  {% url 'buscar_dominio'   as url_dominio %}
+  {% url 'buscar_email'     as url_email %}
+  {% url 'comparar_dominios' as url_comparar %}
+  {% url 'grafo'            as url_grafo %}
+  {% url 'historial'        as url_historial %}
+
+  {% for href, label, name in url_home|zip:url_ip|zip:url_dominio %}{% endfor %}
+
+  <a href="{{ url_home }}"      class="nav-link {% if url_name == 'home'             %}nav-active{% endif %}">Inicio</a>
+  <a href="{{ url_ip }}"        class="nav-link {% if url_name == 'buscar_ip'        %}nav-active{% endif %}">IP</a>
+  <a href="{{ url_dominio }}"   class="nav-link {% if url_name == 'buscar_dominio'   %}nav-active{% endif %}">Dominio</a>
+  <a href="{{ url_email }}"     class="nav-link {% if url_name == 'buscar_email'     %}nav-active{% endif %}">Email</a>
+  <a href="{{ url_comparar }}"  class="nav-link {% if url_name == 'comparar_dominios'%}nav-active{% endif %}">Comparar</a>
+  <a href="{{ url_grafo }}"     class="nav-link {% if url_name == 'grafo'            %}nav-active{% endif %}">Grafo</a>
+  <a href="{{ url_historial }}" class="nav-link {% if url_name == 'historial'        %}nav-active{% endif %}">Historial</a>
+
+  <div class="flex-1"></div>
+
+  {# MFA badge if enabled #}
+  {% if user.is_authenticated %}
+  <div class="flex items-center gap-2">
+    <span class="text-ink bg-white/[0.038] border border-white/[0.075] rounded-lg
+                 px-3 py-1 text-xs font-medium">{{ user.username }}</span>
+    {% if user.mfa_enabled|default:False %}
+    <span class="badge-green text-[0.65rem]">2FA</span>
+    {% endif %}
+    <form method="post" action="{% url 'account_logout' %}" style="margin:0">
+      {% csrf_token %}
+      <button type="submit"
+              class="text-muted border border-white/[0.075] rounded-lg px-3 py-1 text-xs
+                     font-medium transition-all hover:border-danger/50 hover:text-danger
+                     hover:bg-danger/10">Salir</button>
+    </form>
+  </div>
+  {% endif %}
+</nav>
+{% endwith %}
+
+<style>
+.nav-link {
+  @apply text-muted text-[0.845rem] font-medium px-2.5 py-1.5 rounded-lg
+         transition-all duration-150 hover:bg-white/[0.065] hover:text-ink;
+}
+.nav-active {
+  @apply bg-accent/10 text-accent;
+}
+</style>

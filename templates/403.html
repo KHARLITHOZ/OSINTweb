@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}403 Acceso Denegado — OSINTng{% endblock %}
+{% block content %}
+<div class="flex flex-col items-center justify-center py-24 text-center">
+  <div class="text-6xl font-black text-danger mb-4">403</div>
+  <h1 class="text-xl font-semibold text-ink mb-2">Acceso Bloqueado</h1>
+  <p class="text-muted text-sm mb-6 max-w-sm">
+    {{ reason|default:"Tu petición fue bloqueada por el sistema de seguridad." }}
+  </p>
+  <a href="/" class="btn-primary">← Volver al inicio</a>
+</div>
+{% endblock %}

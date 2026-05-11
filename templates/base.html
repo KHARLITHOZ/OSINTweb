@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>{% block title %}OSINTng{% endblock %}</title>
+
+  {# ── Fonts ── #}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  {# ── TailwindCSS (built) ── #}
+  <link rel="stylesheet" href="{% load static %}{% static 'css/dist/tailwind.css' %}">
+
+  {# ── CDN Libraries ── #}
+  {# DOMPurify — sanitización XSS #}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"
+          integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  {# Marked.js — render markdown del análisis IA #}
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"
+          crossorigin="anonymous"></script>
+  {# Axios — cliente HTTP #}
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"
+          crossorigin="anonymous"></script>
+
+  {% block extra_head %}{% endblock %}
+
+  <style>
+    body {
+      background-image: radial-gradient(ellipse 90% 40% at 50% -10%,
+        rgba(79,158,255,0.07) 0%, transparent 65%);
+    }
+    /* Scrollbar */
+    ::-webkit-scrollbar       { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0c0c1c; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(79,158,255,0.4); }
+  </style>
+</head>
+<body class="min-h-full bg-bg text-ink font-sans antialiased flex flex-col">
+
+  {# ── Navigation ── #}
+  {% include "components/nav.html" %}
+
+  {# ── Flash messages ── #}
+  {% if messages %}
+  <div class="max-w-5xl mx-auto px-6 pt-4 space-y-2">
+    {% for msg in messages %}
+    <div class="alert-ok anim-in" role="alert">
+      <span>✓</span> <span>{{ msg }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Main content ── #}
+  <main class="max-w-5xl mx-auto w-full px-6 py-9 pb-16 flex-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  {# ── Footer ── #}
+  <footer class="border-t border-white/[0.06] py-8 px-6 text-center text-faint text-xs">
+    &copy; {% now "Y" %} OSINTng &mdash; by RochiMX
+  </footer>
+
+  {# ── Global JS ── #}
+  <script>
+  /* ── CSRF cookie helper ──────────────────────────────── */
+  function getCookie(name) {
+    const v = document.cookie.split(';').find(c => c.trim().startsWith(name + '='));
+    return v ? decodeURIComponent(v.trim().split('=')[1]) : null;
+  }
+
+  /* ── Axios global config ─────────────────────────────── */
+  axios.defaults.headers.common['X-CSRFToken'] = getCookie('csrftoken');
+  axios.defaults.headers.common['Content-Type'] = 'application/json';
+  axios.interceptors.response.use(
+    r => r,
+    err => {
+      if (err.response?.status === 429) {
+        showToast('Demasiadas peticiones. Espera un momento.', 'warn');
+      } else if (err.response?.status === 401) {
+        window.location.href = '/auth/login/?next=' + encodeURIComponent(window.location.pathname);
+      }
+      return Promise.reject(err);
+    }
+  );
+
+  /* ── Marked + DOMPurify safe render ─────────────────── */
+  function renderMarkdown(text, el) {
+    if (!el) return;
+    const raw = marked.parse(text || '');
+    el.innerHTML = DOMPurify.sanitize(raw, {
+      ALLOWED_TAGS: ['p','strong','em','ul','ol','li','code','pre','h1','h2','h3','br','a'],
+      ALLOWED_ATTR: ['href', 'class'],
+      FORCE_BODY: true,
+    });
+  }
+
+  /* ── Toast notifications ─────────────────────────────── */
+  function showToast(msg, type = 'info') {
+    const colors = {
+      info:    'bg-accent/10 border-accent/30 text-accent',
+      ok:      'bg-success/10 border-success/30 text-success',
+      warn:    'bg-warn/10 border-warn/30 text-warn',
+      danger:  'bg-danger/10 border-danger/30 text-danger',
+    };
+    const t = document.createElement('div');
+    t.className = `fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl border text-sm font-medium
+                   shadow-glass-lg anim-in max-w-sm ${colors[type] || colors.info}`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+  }
+
+  /* ── Clipboard ───────────────────────────────────────── */
+  function copyText(text, iconEl) {
+    navigator.clipboard.writeText(text).then(() => {
+      if (iconEl) { const o = iconEl.textContent; iconEl.textContent = '✓'; setTimeout(() => iconEl.textContent = o, 1200); }
+      showToast('Copiado al portapapeles', 'ok');
+    }).catch(() => showToast('No se pudo copiar', 'warn'));
+  }
+
+  /* ── Export JSON ─────────────────────────────────────── */
+  function exportJSON(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob), download: filename || 'osint.json'
+    });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+
+  /* ── AI analysis (common) ───────────────────────────── */
+  function analyzeWithAI(type, data, btn, resultEl) {
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = 'Analizando…';
+    btn.classList.add('loading');
+    if (resultEl) { resultEl.innerHTML = ''; resultEl.classList.add('hidden'); }
+
+    axios.post('/api/v1/analyze/', { type, data })
+      .then(res => {
+        if (resultEl) {
+          renderMarkdown(res.data.analysis, resultEl);
+          resultEl.classList.remove('hidden');
+        }
+      })
+      .catch(err => {
+        const msg = err.response?.data?.error || 'Error al analizar.';
+        showToast(msg, 'danger');
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = '✦ Analizar con IA';
+        btn.classList.remove('loading');
+      });
+  }
+
+  /* ── Card entrance animation ─────────────────────────── */
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.card, .stat-card').forEach((el, i) => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(12px)';
+      el.style.transition = `opacity 0.3s ease ${i * 45}ms, transform 0.3s ease ${i * 45}ms`;
+      requestAnimationFrame(() =>
+        setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'none'; }, 20 + i * 45)
+      );
+    });
+
+    /* Botones de formulario — loading state */
+    document.querySelectorAll('form[data-osint]').forEach(form => {
+      form.addEventListener('submit', () => {
+        const btn = form.querySelector('[type="submit"]');
+        if (btn && !btn.disabled) {
+          btn.disabled = true;
+          btn.dataset.original = btn.textContent;
+          btn.textContent = 'Analizando…';
+          btn.classList.add('loading');
+        }
+      });
+    });
+  });
+  </script>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

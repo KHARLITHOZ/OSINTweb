@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — OSINTng{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold tracking-tight mb-6">Dashboard</h1>
+
+{# ── Stats grid ── #}
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+  {% for item in stats_cards %}
+  <div class="stat-card card text-center">
+    <div class="text-2xl font-bold text-accent leading-tight">{{ item.value }}</div>
+    <div class="text-muted text-xs mt-1 font-medium uppercase tracking-wider">{{ item.label }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+{# ── Tools ── #}
+<h2 class="text-xs font-semibold text-muted uppercase tracking-widest mb-4">Herramientas</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+  {% for tool in tools %}
+  <a href="{{ tool.url }}"
+     class="card hover:border-accent/40 hover:bg-accent/[0.03] group transition-all duration-200 block">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl" aria-hidden="true">{{ tool.icon }}</span>
+      <div>
+        <div class="font-semibold text-sm text-ink group-hover:text-accent transition-colors">{{ tool.label }}</div>
+        <div class="text-muted text-xs mt-0.5">{{ tool.desc }}</div>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+{# ── Recent searches ── #}
+<div class="card">
+  <h2 class="section-label">Búsquedas recientes</h2>
+  <div id="recent-table">
+    {% if stats.recent %}
+    <table class="w-full">
+      <thead>
+        <tr>
+          <th class="text-left text-muted text-[0.72rem] font-semibold uppercase tracking-wider py-2 px-3">Tipo</th>
+          <th class="text-left text-muted text-[0.72rem] font-semibold uppercase tracking-wider py-2 px-3">Consulta</th>
+          <th class="text-left text-muted text-[0.72rem] font-semibold uppercase tracking-wider py-2 px-3">Estado</th>
+          <th class="text-left text-muted text-[0.72rem] font-semibold uppercase tracking-wider py-2 px-3">Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in stats.recent %}
+        <tr class="border-t border-white/[0.06] hover:bg-white/[0.02] transition-colors">
+          <td class="py-2.5 px-3">
+            {% if rec.query_type == 'ip' %}<span class="badge-blue">IP</span>
+            {% elif rec.query_type == 'domain' %}<span class="badge-purple">Dominio</span>
+            {% else %}<span class="badge-yellow">Email</span>{% endif %}
+          </td>
+          <td class="py-2.5 px-3 text-sm font-mono text-ink">{{ rec.query }}</td>
+          <td class="py-2.5 px-3">
+            {% if rec.success %}<span class="badge-green">OK</span>
+            {% else %}<span class="badge-red">Error</span>{% endif %}
+          </td>
+          <td class="py-2.5 px-3 text-muted text-xs">{{ rec.created_at|date:"d/m/Y H:i" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="pt-3 text-right">
+      <a href="{% url 'historial' %}" class="text-accent text-xs hover:underline">Ver todo el historial →</a>
+    </div>
+    {% else %}
+    <p class="text-muted text-sm text-center py-8">Aún no hay búsquedas. ¡Empieza con una IP o dominio!</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const tools = [
+  { url: '{% url "buscar_ip" %}',        icon: '🌐', label: 'Búsqueda IP',      desc: 'Geolocalización, ASN, proxy detection' },
+  { url: '{% url "buscar_dominio" %}',   icon: '🔍', label: 'Búsqueda Dominio', desc: 'WHOIS, DNS, certificados, subdominios' },
+  { url: '{% url "buscar_email" %}',     icon: '📧', label: 'Búsqueda Email',   desc: 'MX, HIBP, análisis de riesgo' },
+  { url: '{% url "comparar_dominios" %}',icon: '⚖️', label: 'Comparar',         desc: 'Comparación lado a lado de dominios' },
+  { url: '{% url "grafo" %}',            icon: '🕸️', label: 'Grafo OSINT',      desc: 'Visualiza relaciones entre entidades' },
+  { url: '{% url "historial" %}',        icon: '📋', label: 'Historial',        desc: 'Todas tus búsquedas anteriores' },
+];
+
+const statsCards = [
+  { value: '{{ stats.total }}', label: 'Total' },
+  { value: '{{ stats.ip }}',    label: 'IPs' },
+  { value: '{{ stats.domain }}',label: 'Dominios' },
+  { value: '{{ stats.email }}', label: 'Emails' },
+];
+
+// Render tools grid via JS so data is consistent
+document.addEventListener('DOMContentLoaded', () => {
+  // Stats cards are already server-rendered; tools inject into the grid template slots
+  // (Django template above handles them, this is for client-side future use)
+});
+</script>
+{% endblock %}

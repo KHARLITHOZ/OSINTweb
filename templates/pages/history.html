@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Historial — OSINTng{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.tailwindcss.min.css">
+<script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js" crossorigin=""></script>
+{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold tracking-tight">Historial</h1>
+  <div class="flex gap-2">
+    <a href="/api/v1/export/csv/" class="btn-export">↓ CSV completo</a>
+  </div>
+</div>
+
+{# Filters #}
+<div class="flex gap-2 mb-5 flex-wrap">
+  {% for label, val, cls in filter_tabs %}
+  <a href="?tipo={{ val }}"
+     class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all
+            {% if tipo_activo == val %}{{ cls }} border-current{% else %}border-white/[0.075] text-muted hover:text-ink hover:bg-white/[0.04]{% endif %}">
+    {{ label }}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="card p-0 overflow-hidden">
+  <table id="history-table" class="w-full" style="width:100%">
+    <thead>
+      <tr class="border-b border-white/[0.075]">
+        <th class="text-left text-muted text-[0.72rem] font-semibold uppercase tracking-wider py-3 px-4">Tipo</th>
+        <th class="text-left text-muted text-[0.72rem] font-semibold uppercase tracking-wider py-3 px-4">Consulta</th>
+        <th class="text-left text-muted text-[0.72rem] font-semibold uppercase tracking-wider py-3 px-4">Estado</th>
+        <th class="text-left text-muted text-[0.72rem] font-semibold uppercase tracking-wider py-3 px-4">Fecha</th>
+        <th class="text-left text-muted text-[0.72rem] font-semibold uppercase tracking-wider py-3 px-4">Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="history-body">
+      <tr><td colspan="5" class="text-center text-muted py-10 text-sm">Cargando…</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const TIPO = '{{ tipo_activo }}';
+const TYPE_BADGE = {
+  ip:     '<span class="badge-blue">IP</span>',
+  domain: '<span class="badge-purple">Dominio</span>',
+  email:  '<span class="badge-yellow">Email</span>',
+};
+const STATUS_BADGE = {
+  true:  '<span class="badge-green">OK</span>',
+  false: '<span class="badge-red">Error</span>',
+};
+const QUERY_URLS = {
+  ip:     q => `/buscar/ip/?ip=${encodeURIComponent(q)}`,
+  domain: q => `/buscar/dominio/?dominio=${encodeURIComponent(q)}`,
+  email:  q => `/buscar/email/?email=${encodeURIComponent(q)}`,
+};
+
+// Load data via Axios then init DataTable
+async function loadHistory() {
+  const tbody = document.getElementById('history-body');
+  try {
+    const params = TIPO ? { tipo: TIPO } : {};
+    const { data } = await axios.get('/api/v1/history/', { params });
+    const rows = data.results;
+
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-10 text-sm">Sin resultados.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = rows.map(r => `
+      <tr class="border-t border-white/[0.06] hover:bg-white/[0.02] transition-colors">
+        <td class="py-2.5 px-4">${DOMPurify.sanitize(TYPE_BADGE[r.query_type] || r.query_type)}</td>
+        <td class="py-2.5 px-4 font-mono text-xs text-ink break-all max-w-xs">${DOMPurify.sanitize(r.query)}</td>
+        <td class="py-2.5 px-4">${DOMPurify.sanitize(STATUS_BADGE[String(r.success)] || '')}</td>
+        <td class="py-2.5 px-4 text-muted text-xs whitespace-nowrap">${new Date(r.created_at).toLocaleString('es-ES')}</td>
+        <td class="py-2.5 px-4">
+          <button onclick="copyText('${r.query.replace(/'/g,"\\'")}', this)"
+                  class="btn-export text-[0.65rem] px-2 py-1">⧉ Copiar</button>
+        </td>
+      </tr>
+    `).join('');
+
+    // Init DataTables with Tailwind skin
+    new DataTable('#history-table', {
+      pageLength: 20,
+      lengthMenu: [10, 20, 50, 100],
+      order:      [[3, 'desc']],
+      language: {
+        search:   'Buscar:',
+        lengthMenu: 'Mostrar _MENU_ por página',
+        info:     'Mostrando _START_–_END_ de _TOTAL_',
+        paginate: { previous: '←', next: '→' },
+        emptyTable: 'Sin resultados',
+      },
+      dom: '<"flex flex-wrap items-center justify-between gap-3 px-4 pt-3 pb-2"lf>t<"flex items-center justify-between px-4 pb-3 pt-2"ip>',
+    });
+
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-10 text-sm">Error al cargar el historial.</td></tr>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadHistory);
+</script>
+{% endblock %}
